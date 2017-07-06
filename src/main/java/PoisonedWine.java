@@ -63,7 +63,31 @@ public class PoisonedWine {
             ret[i] = bad.get(i).intValue();
         return ret;
     }
+
+    double probNoPoison(int wine, int poison, int n) {
+        // n本選んで毒が入っていない確率
+        double ans = 1;
+        for(int i = 0; i < n; i++) {
+            ans *= (wine - poison - i) / (double)(wine - i);
+        }
+        return ans;
+    }
     // ---8<------- end of solution submitted to the website -------8<-------
+
+    public void testFuncs() {
+        System.out.println("testFunc");
+        for(int wine = 100; wine < 1000; wine += 100) {
+            System.out.println("Wine: " + wine);
+            for(int poison = 1; poison < wine / 50; poison++) {
+                System.out.println("Poison: " + poison);
+                double pre = 1;
+                for(int n = 5; n < wine / poison && pre > 0.5; n++) {
+                    pre = probNoPoison(wine, poison, n);
+                    System.out.println("n=" + n + " -> " + String.format("%.20f", pre));
+                }
+            }
+        }
+    }
 
     public PoisonedWine(PoisonedWineVis vis) {
         PoisonTest.vis = vis;
