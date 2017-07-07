@@ -37,33 +37,72 @@ class PoisonTest {
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
+    int W, P;
+    public static double lowerProb = 0.3;
     public int[] testWine(int numBottles, int testStrips, int testRounds, int numPoison) {
+        W = numBottles;
+        P = numPoison;
         // do one round, split all bottles in batches and run one test on each batch
-        int n = numBottles / testStrips;
-        if (numBottles % testStrips > 0)
-            n++;
+        HashSet<Integer> goodBottles = new HashSet<>();
+        for(int test = 0; test < testRounds && testStrips > 0; test++) {
+            int n = //Math.min(
+                    (numBottles + testStrips - 1) / testStrips
+//                    , getStripWidthSingle(numBottles, numPoison, lowerProb))
+                    ;
+            if(n < 0) n = 1;
 //        System.err.println("Batch size " + n);
-        String[] tests = new String[testStrips];
-        for (int i = 0; i < testStrips; ++i) {
-            tests[i] = "" + (i * n);
-            for (int j = 1; j < n && i * n + j < numBottles; ++j)
-                tests[i] += "," + (i * n + j);
-        }
-        int[] testRes = PoisonTest.useTestStrips(tests);
-        ArrayList<Integer> bad =  new ArrayList<Integer>();
-        for (int i = 0; i < testRes.length; ++i)
-            if (testRes[i] == 1) {
-                // poison detected - throw out all bottles in this batch
-                for (int j = 0; j < n && i * n + j < numBottles; ++j)
-                    bad.add(i * n + j);
-            } else {
-//                System.err.println("Keeping batch " + i);
+            String[] tests = new String[testStrips];
+            for (int i = 0; i < testStrips; ++i) {
+                // TODO goodbottle取り除いてないやんけー!!!
+                tests[i] = "" + (i * n);
+                for (int j = 1; j < n && i * n + j < numBottles; ++j)
+                    tests[i] += "," + (i * n + j);
             }
+            int[] testRes = PoisonTest.useTestStrips(tests);
+            ArrayList<Integer> good = new ArrayList<Integer>();
+            int used = 0;
+            for (int i = 0; i < testRes.length; ++i)
+                if (testRes[i] == 1) {
+                    used++;
+                } else {
+                    for (int j = 0; j < n && i * n + j < numBottles; ++j) {
+                        good.add(i * n + j);
+                    }
+//                System.err.println("Keeping batch " + i);
+                }
+            goodBottles.addAll(good);
+            numBottles -= good.size();
+            testStrips -= used;
+        }
 
-        int[] ret = new int[bad.size()];
-        for (int i = 0; i < bad.size(); ++i)
-            ret[i] = bad.get(i).intValue();
+
+        int[] ret = new int[W - goodBottles.size()];
+        int idx = 0;
+        for(int i = 0; i < W; i++) {
+            if(goodBottles.contains(i)) continue;
+            ret[idx++] = i;
+        }
+
         return ret;
+    }
+
+    /*
+    毒を引かない確率がprobを下回らない最大の幅を返す
+     */
+    int getStripWidthSingle(int wine, int poison, double prob) {
+        int left = 1;
+        int right = wine - poison;
+        int ans = -1;
+        while(left <= right) {
+            int mid = (left + right) / 2;
+            if(probNoPoison(wine, poison, mid) >= prob) {
+                ans = mid;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return ans;
     }
 
     double probNoPoison(int wine, int poison, int n) {
@@ -200,9 +239,11 @@ public class PoisonedWine {
             for(int poison = 1; poison < wine / 50; poison += 10) {
                 System.out.println("Poison: " + poison);
                 double pre = 1;
-                for(int n = 5; n < wine / poison && pre > 0.5; n++) {
+                for(int n = 5; n < wine / poison && pre > 0.2; n++) {
                     pre = probNoPoison(wine, poison, n);
-                    System.out.println("n=" + n + " -> " + String.format("%.20f", pre));
+                    System.out.println("n=" + n + " -> "
+                            + String.format("%.20f  (save prob: %.20f)", pre, n * pre));
+
                 }
             }
         }
