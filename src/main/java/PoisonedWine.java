@@ -1,4 +1,6 @@
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.*;
 
 class BR {
@@ -74,11 +76,128 @@ public class PoisonedWine {
     }
     // ---8<------- end of solution submitted to the website -------8<-------
 
-    public void testFuncs() {
+    double testProbDeath() {
+        int m = 20;
+        int p = 4;
+        int eat = 3;
+        int hit = 3;
+        int a1 = (1 << eat) - 1;
+        int a2 = a1 << eat;
+        int a3 = a1 << eat * 2;
+        int all = 0;
+        int baai = 0;
+        int notA1 = 0;
+        int notA12 = 0;
+        for(int i = 0; i < (1 << m); i++) {
+            if(Integer.bitCount(i) != p) continue;
+            all++;
+            int b1 = (a1 & i) > 0 ? 1 : 0;
+            int b2 = (a2 & i) > 0 ? 1 : 0;
+            int b3 = (a3 & i) > 0 ? 1 : 0;
+//            if(b1 == 0) notA1++;
+//            if(b1 + b2 == hit) baai++;
+            if(b1 + b2 + b3 == hit) baai++;
+        }
+        double res = (double) baai / all;
+//        System.out.println("not a12: " + notA12);
+//        System.out.println("not a1: " + notA1);
+        System.out.println("baai: " + baai);
+        System.out.println("all: " + all);
+        System.out.println(res);
+        return res;
+    }
+
+    double calcDeath(int wine, int poison, int wid, int strip, int death) {
+        /*
+         ワイン数，毒数，strip，1stripあたりのwine数のとき
+         death本のstripが破壊される確率
+         strip -> maxStripとして，
+         prob[strip][death]の配列で返すように修正可能
+         O(strip ^ 2 * poison ^ 2)
+          */
+        if(comb == null) initComb();
+        if(death > poison) return 0;
+        int deathMax = Math.min(poison, strip);
+        double[][][] dp = new double[strip + 1][poison + 1][deathMax + 1];
+        dp[0][poison][0] = 1;
+        for(int i = 0; i < strip; i++) {
+            for(int j = 0; j <= poison; j++) {
+                for(int k = 0; k <= deathMax; k++) {
+                    if(dp[i][j][k] == 0) continue;
+                    int wineRem = wine - i * wid;
+                    dp[i + 1][j][k] += prob(wineRem, j, wid, 0) * dp[i][j][k];
+                    for(int l = 1; l <= Math.min(j, wid); l++) {
+                        dp[i + 1][j - l][k + 1] += prob(wineRem, j, wid, l) * dp[i][j][k];
+                    }
+                }
+            }
+        }
+        double ans = 0;
+        for(int i = 0; i <= poison; i++) {
+            ans += dp[strip][i][death];
+        }
+        return ans;
+    }
+
+    /**
+     * stripにwid本のワインを使ったとき，毒がhit本引っかかる確率
+     * @param wine ワイン
+     * @param poison 毒
+     * @param wid stripに使うワインの数
+     * @param hit stripに引っかかる毒の数
+     * @return hit本の毒が引っかかる確率
+     */
+    double prob(int wine, int poison, int wid, int hit) {
+        // パラメータが大きいとcombがinfになってしまい，NaNを返す: TODO
+//        return comb(wid, hit)
+//                * comb(wine - wid, poison - hit)
+//                / comb(wine, poison);
+        return comb[wid][hit].multiply(comb[wine-wid][poison-hit], MathContext.DECIMAL64)
+                .divide(comb[wine][poison], MathContext.DECIMAL64).doubleValue();
+    }
+
+//    double comb(int n, int r) {
+//        return comb[n][r];
+//    }
+
+    final int WINE_MAX = 10000;
+    final int POISONE_MAX = 200;
+//    double[][] comb;
+//    void initComb() {
+//        comb = new double[WINE_MAX + 1][POISONE_MAX + 1];
+//        for(int i = 0; i <= WINE_MAX; i++){
+//            for(int j = 0; j <= Math.min(i, POISONE_MAX); j++){
+//                if(j == 0 || j == i){
+//                    comb[i][j] = 1;
+//                }else{
+//                    comb[i][j] = comb[i - 1][j - 1] + comb[i - 1][j];
+//                }
+//            }
+//        }
+//    }
+
+    BigDecimal[][] comb;
+    void initComb() {
+        comb = new BigDecimal[WINE_MAX + 1][POISONE_MAX + 1];
+        for(int i = 0; i <= WINE_MAX; i++){
+            for(int j = 0; j <= Math.min(i, POISONE_MAX); j++){
+                if(j == 0 || j == i){
+                    comb[i][j] = new BigDecimal(1);
+                }else{
+                    comb[i][j] = comb[i - 1][j - 1].add(comb[i - 1][j], MathContext.DECIMAL64);
+                }
+            }
+        }
+    }
+
+
+    public void testProb() {
+        // 幅nで死なない確率
+        // 50%未満の幅は得策ではないため，その枝刈りに使う予定
         System.out.println("testFunc");
-        for(int wine = 100; wine < 1000; wine += 100) {
+        for(int wine = 1000; wine < 10000; wine += 1000) {
             System.out.println("Wine: " + wine);
-            for(int poison = 1; poison < wine / 50; poison++) {
+            for(int poison = 1; poison < wine / 50; poison += 10) {
                 System.out.println("Poison: " + poison);
                 double pre = 1;
                 for(int n = 5; n < wine / poison && pre > 0.5; n++) {
