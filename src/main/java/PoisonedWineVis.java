@@ -74,12 +74,15 @@ public class PoisonedWineVis {
     }
 
     TestInfo testCase;
+    long time;
     public double runTest(String seed) {
         try {
             long seedL = Long.parseLong(seed);
             generateTestCase(seedL);
             testCase = new TestInfo(seedL, numBottles, testStrips, testRounds, numPoison);
+            time = System.currentTimeMillis();
             int[] ret = new PoisonedWine(this).testWine(numBottles, testStrips, testRounds, numPoison);
+            time = System.currentTimeMillis() - time;
             if (failure) {
                 return 0;
             }
@@ -173,7 +176,7 @@ public class PoisonedWineVis {
                 } catch (Exception e) { e.printStackTrace(); }
             }
             testScore = runTest(seed);
-//            System.out.println("Score = " + testScore);
+            System.out.printf("seed: %3s  Score: %f  time: %d\n", seed, testScore, time);
             if (proc != null)
                 try { proc.destroy(); }
                 catch (Exception e) { e.printStackTrace(); }
@@ -189,24 +192,25 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 2000;
+        int testN = 500;
         long seed = 1;
-        for(int prob = 1; prob < 10; prob++) {
+//        for(int prob = 1; prob < 10; prob++) {
             double scoreSum = 0;
             List<TestInfo> testList = new ArrayList<>(testN);
             for (long i = seed; i < testN + seed; i++) {
-                PoisonedWine.searchProb = prob / 10.0;
+//                PoisonedWine.searchProb = prob / 10.0;
                 PoisonedWineVis f = new PoisonedWineVis(String.valueOf(i));
                 scoreSum += f.testScore;
                 TestInfo t = f.testCase;
                 t.sampleScore = f.testScore;
                 testList.add(t);
+                System.out.println("current: " + (scoreSum / i));
             }
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, String.format("result_0.%d0_2.csv", prob));
-        }
+//            writeTestInfo(testList, String.format("result_dp.csv"));
+//        }
     }
     // -----------------------------------------
 

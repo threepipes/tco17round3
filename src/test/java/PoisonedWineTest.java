@@ -1,10 +1,10 @@
 import org.junit.Test;
 
 public class PoisonedWineTest {
-    @Test
-    public void testTestFuncs() {
-        PoisonedWine pw = new PoisonedWine();
-        pw.testProb();
+//    @Test
+//    public void testTestFuncs() {
+//        PoisonedWine pw = new PoisonedWine();
+//        pw.testProb();
 //        for(int wine = 100; wine <= 200; wine += 10) {
 //            for(int poison = wine / 2 - 10; poison <= wine / 2; poison++) {
 //                for(int wid = 5; wid <= 10; wid++) {
@@ -42,5 +42,22 @@ public class PoisonedWineTest {
 //                System.out.printf("death=%d scale=%d prob=%f\n", death, scale, prob);
 //            }
 //        }
+//    }
+
+//    @Test
+//    public void testEstDP() {
+//        PoisonedWine pw = new PoisonedWine();
+//        pw.W = 137;
+//        pw.curW = pw.W;
+//        pw.P = 1;
+//        pw.S = 9;
+//        pw.R = 4;
+//        int wid = pw.estimateBestWidth(pw.W, pw.S, pw.R);
+//        System.out.println("wid: " + wid);
+//    }
+
+    @Test
+    public void testSeed() {
+        PoisonedWineVis f = new PoisonedWineVis("387");
     }
 }

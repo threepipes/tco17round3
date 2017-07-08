@@ -37,8 +37,21 @@ class PoisonTest {
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
+    Random rand = new Random(0);
+    void shuffle(int[] a) {
+        for(int i = 0; i < a.length; i++) {
+            int i1 = rand.nextInt(a.length);
+            int i2 = rand.nextInt(a.length);
+            int tmp = a[i1];
+            a[i1] = a[i2];
+            a[i2] = tmp;
+        }
+    }
+
     static double searchProb = 0.3;
     int W, P, S, R;
+    int curW;
+    double est = -1;
     public int[] testWine(int numBottles, int testStrips, int testRounds, int numPoison) {
         W = numBottles;
         P = numPoison;
@@ -48,12 +61,18 @@ public class PoisonedWine {
         for(int i = 0; i < numBottles; i++) {
             bottle[i] = i;
         }
+        shuffle(bottle);
         for(int test = 0; test < testRounds && testStrips > 0; test++) {
-            // do one round, split all bottles in batches and run one test on each batch
-//            int n = numBottles / testStrips;
-//            if (numBottles % testStrips > 0)
-//                n++;
-            int n = searchWidByProb(numBottles, numPoison, searchProb);
+            curW = numBottles;
+            int n;
+            if(numPoison < 40 && testRounds - test <= 5 && (testRounds - test < 4 || testStrips <= 3)) {
+                n = estimateBestWidth(numBottles, testStrips, testRounds - test);
+                System.out.printf("wine:%4d poi:%3d str:%2d n:%d\t(prob:%f)\n",
+                        numBottles, numPoison, testStrips, n, probNoPoison(numBottles, numPoison, n));
+            } else {
+                n = searchWidByProb(numBottles, numPoison, 0.4);
+            }
+//            int n = searchWidByProb(numBottles, numPoison, searchProb);
             if(n == -1) n = (numBottles + testStrips - 1) / testStrips;
 //        System.err.println("Batch size " + n);
 //            String[] tests = new String[testStrips];
@@ -71,7 +90,7 @@ public class PoisonedWine {
             for (int i = 0; i * n < numBottles; ++i)
                 if (i >= testRes.length || testRes[i] == 1) {
                     // poison detected - throw out all bottles in this batch
-                    used++;
+                    if(i < testRes.length) used++;
                     for (int j = 0; j < n && i * n + j < numBottles; ++j)
                         bottle[next++] = bottle[i * n + j];
                 } else {
@@ -83,6 +102,10 @@ public class PoisonedWine {
         int[] ret = new int[numBottles];
         for (int i = 0; i < numBottles; ++i)
             ret[i] = bottle[i];
+        int saved = W - numBottles;
+        if(est >= 0)
+            System.out.printf("est:%.20f real:%d diff:%.20f diff/acc:%.20f \n",
+                est, saved, est - saved, (est - saved) / (W - P));
         return ret;
     }
 
@@ -104,42 +127,71 @@ public class PoisonedWine {
 
     double probNoPoison(int wine, int poison, int n) {
         // n本選んで毒が入っていない確率
-        double ans = 1;
-        for(int i = 0; i < n; i++) {
-            ans *= (wine - poison - i) / (double)(wine - i);
-        }
-        return ans;
+//        double ans = 1;
+//        for(int i = 0; i < n; i++) {
+//            ans *= (wine - poison - i) / (double)(wine - i);
+//        }
+//        return ans;
+        if(n > wine - poison) return poison > 0 ? 1 : 0;
+        return perm[wine - poison]
+                .multiply(perm[wine - n], MathContext.DECIMAL64)
+                .divide(perm[wine - poison - n], MathContext.DECIMAL64)
+                .divide(perm[wine], MathContext.DECIMAL64).doubleValue();
+    }
+
+    int getWidInterval(int wine, int strip) {
+        final int WID_MAX = Math.min(wine - P, wine / strip);
+        if(WID_MAX <= 50) return 1;
+        return WID_MAX / 50;
     }
 
     int estimateBestWidth(int wine, int strip, int round) {
         double max = 0;
         int argmax = 1;
-        // 幅1刻みは愚直なので，wine数等に応じて変化させる TODO
-        for(int wid = 1; wid <= wine - P; wid++) {
+        // どういった場合にどういった幅がベストか確認し，ある程度幅を絞る必要がある TODO
+        if(strip == 0) return 1;
+        for(int prob = 1; prob <= 8; prob++) {
+            int wid = prob == 8 ?
+                    wine / strip :
+                    searchWidByProb(wine, P, prob / 10.0);
+            if(wid <= 0) continue;
             double exp = estDfs(wine, Math.min(strip, wine / wid), round, wid);
             if(exp > max) {
                 max = exp;
                 argmax = wid;
             }
         }
+        if(est < 0) est = max;
+        System.out.println(max);
         return argmax;
     }
 
     HashMap<Long, Double> estCache = new HashMap<>();
     double estDfs(int wine, int strip, int round, int wid) {
-        if(round == 0 || wine == P) return W - wine;
+        if(round == 0 || wine == P || strip == 0) return W - wine;
         long id = (long) wine * W * S * R + (long) strip * W * R
                 + round * W + wid;
         if(estCache.containsKey(id)) return estCache.get(id);
         double res = 0;
-        for(int death = 0; death <= strip; death++) {
-            double probOcc = calcDeath(wine, wid)[strip][death];
+        final int useStrips = Math.min(strip, wine / wid);
+        final int saveStrips = strip - useStrips;
+        for(int death = 0; death <= useStrips; death++) {
+            double probOcc = calcDeath(wine, wid)[useStrips][death];
             double maxStrategy = 0;
-            final int s0 = strip - death;
-            // 幅1刻みは愚直なので，wine数等に応じて変化させる TODO
-            for(int nextWid = 1; nextWid <= wine - P; nextWid++) {
+            final int s0 = useStrips - death;
+            final int nextStrips = s0 + saveStrips;
+            final int NEXT_WINE = wine - s0 * wid;
+            if(round == 1 || nextStrips == 0) {
+                res += probOcc * (W - NEXT_WINE);
+                continue;
+            }
+            for(int prob = 1; prob <= 8; prob++) {
+                int nextWid = prob == 8 ?
+                        wine / strip :
+                        searchWidByProb(wine, P, prob / 10.0);
+                if(nextWid <= 0) continue;
                 maxStrategy = Math.max(maxStrategy,
-                        estDfs(wine - s0, s0, round - 1, nextWid));
+                        estDfs(NEXT_WINE, nextStrips, round - 1, nextWid));
             }
             res += probOcc * maxStrategy;
         }
@@ -158,10 +210,11 @@ public class PoisonedWine {
          O(strip ^ 2 * poison ^ 2)
           */
         if(comb == null) initComb();
-        int deathMax = Math.min(P, S);
-        double[][][] dp = new double[S + 1][P + 1][deathMax + 1];
+        final int strip = Math.min(S, wine / wid);
+        int deathMax = Math.min(P, strip);
+        double[][][] dp = new double[strip + 1][P + 1][deathMax + 1];
         dp[0][P][0] = 1;
-        for(int i = 0; i < S; i++) {
+        for(int i = 0; i < strip; i++) {
             for(int j = 0; j <= P; j++) {
                 for(int k = 0; k <= deathMax; k++) {
                     if(dp[i][j][k] == 0) continue;
@@ -173,11 +226,11 @@ public class PoisonedWine {
                 }
             }
         }
-        double[][] res = new double[S + 1][S + 1];
-        for(int s = 1; s <= S; s++) {
+        double[][] res = new double[strip + 1][strip + 1];
+        for(int s = 1; s <= strip; s++) {
             for(int d = 0; d <= s; d++) {
                 for(int p = 0; p <= P; p++) {
-                    res[s][d] += dp[s][p][d];
+                    res[s][d] += d > P ? 0 : dp[s][p][d];
                 }
             }
         }
@@ -194,6 +247,8 @@ public class PoisonedWine {
      * @return hit本の毒が引っかかる確率
      */
     double prob(int wine, int poison, int wid, int hit) {
+        if(comb[wid][hit] == null || comb[wine-wid][poison-hit] == null || comb[wine][poison] == null)
+            return 0;
         return comb[wid][hit].multiply(comb[wine-wid][poison-hit], MathContext.DECIMAL64)
                 .divide(comb[wine][poison], MathContext.DECIMAL64).doubleValue();
     }
@@ -202,6 +257,7 @@ public class PoisonedWine {
     final int POISONE_MAX = 200;
     BigDecimal[][] comb;
     void initComb() {
+        initPerm();
         comb = new BigDecimal[WINE_MAX + 1][POISONE_MAX + 1];
         for(int i = 0; i <= WINE_MAX; i++){
             for(int j = 0; j <= Math.min(i, POISONE_MAX); j++){
@@ -211,6 +267,16 @@ public class PoisonedWine {
                     comb[i][j] = comb[i - 1][j - 1].add(comb[i - 1][j], MathContext.DECIMAL64);
                 }
             }
+        }
+    }
+
+    BigDecimal[] perm;
+    void initPerm() {
+        perm = new BigDecimal[WINE_MAX + 1];
+        perm[0] = new BigDecimal(1, MathContext.DECIMAL64);
+        for(int i = 1; i <= WINE_MAX; i++) {
+            perm[i] = perm[i - 1].multiply(
+                    new BigDecimal(i, MathContext.DECIMAL64), MathContext.DECIMAL64);
         }
     }
 
