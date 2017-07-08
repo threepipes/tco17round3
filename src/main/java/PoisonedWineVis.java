@@ -173,7 +173,7 @@ public class PoisonedWineVis {
                 } catch (Exception e) { e.printStackTrace(); }
             }
             testScore = runTest(seed);
-            System.out.println("Score = " + testScore);
+//            System.out.println("Score = " + testScore);
             if (proc != null)
                 try { proc.destroy(); }
                 catch (Exception e) { e.printStackTrace(); }
@@ -189,27 +189,31 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 2;
+        int testN = 2000;
         long seed = 1;
-        double scoreSum = 0;
-        List<TestInfo> testList = new ArrayList<>(testN);
-        for(long i = seed; i < testN + seed; i++) {
-            PoisonedWineVis f = new PoisonedWineVis(String.valueOf(i));
-            scoreSum += f.testScore;
-            TestInfo t = f.testCase;
-            t.sampleScore = f.testScore;
-            testList.add(t);
+        for(int prob = 1; prob < 10; prob++) {
+            double scoreSum = 0;
+            List<TestInfo> testList = new ArrayList<>(testN);
+            for (long i = seed; i < testN + seed; i++) {
+                PoisonedWine.searchProb = prob / 10.0;
+                PoisonedWineVis f = new PoisonedWineVis(String.valueOf(i));
+                scoreSum += f.testScore;
+                TestInfo t = f.testCase;
+                t.sampleScore = f.testScore;
+                testList.add(t);
+            }
+            System.out.println("sum: " + scoreSum);
+            System.out.println("avg: " + (scoreSum / testN));
+            System.out.println("score: " + (scoreSum * 1000000L / testN));
+            writeTestInfo(testList, String.format("result_0.%d0_2.csv", prob));
         }
-        System.out.println("sum: " + scoreSum);
-        System.out.println("avg: " + (scoreSum / testN));
-        System.out.println("score: " + (scoreSum * 1000000L / testN));
-        writeTestInfo(testList);
     }
     // -----------------------------------------
 
-    static void writeTestInfo(List<TestInfo> testList) {
-        File file = new File(System.getenv("DATA_PATH") + "execcase.csv");
+    static void writeTestInfo(List<TestInfo> testList, String filename) {
+        File file = new File(System.getenv("DATA_PATH") + "/0708/" + filename);
         try(PrintWriter out = new PrintWriter(file)) {
+            out.println("id,"+filename);
             for(TestInfo t: testList) {
                 out.println(t);
             }
