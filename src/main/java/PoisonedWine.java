@@ -58,16 +58,19 @@ public class PoisonedWine {
         P = numPoison;
         S = testStrips;
         R = testRounds;
+        System.out.println("val: " + ((long)W * S * R * R * P / 1000));
         initWidProb();
         int[] bottle = new int[numBottles];
         for(int i = 0; i < numBottles; i++) {
             bottle[i] = i;
         }
-        shuffle(bottle);
+//        shuffle(bottle);
         for(int test = 0; test < testRounds && testStrips > 0; test++) {
+            final long VAL = (long)W * S * (testRounds - test)
+                    * (testRounds - test) * P / 1000;
             curW = numBottles;
             int n;
-            if(true || numPoison * testRounds < 50 && numBottles < 3000 || numPoison < 20 && testRounds - test <= 5 && (testRounds - test < 4 || testStrips <= 3)) {
+            if(VAL < 9000 || P < 10) {
                 n = estimateBestWidth(numBottles, testStrips, testRounds - test);
                 System.out.printf("wine:%4d poi:%3d str:%2d n:%d\t(prob:%f)\n",
                         numBottles, numPoison, testStrips, n, probNoPoison(numBottles, numPoison, n));
@@ -89,15 +92,21 @@ public class PoisonedWine {
             int[] testRes = PoisonTest.useTestStrips(tests.toArray(new String[0]));
             int next = 0;
             int used = 0;
+            List<Integer> warning = new ArrayList<>();
             for (int i = 0; i * n < numBottles; ++i)
                 if (i >= testRes.length || testRes[i] == 1) {
                     // poison detected - throw out all bottles in this batch
-                    if(i < testRes.length) used++;
-                    for (int j = 0; j < n && i * n + j < numBottles; ++j)
+                    if(i < testRes.length) {
+                        for (int j = 0; j < n && i * n + j < numBottles; ++j)
+                            warning.add(bottle[i * n + j]);
+                        used++;
+                    } else for (int j = 0; j < n && i * n + j < numBottles; ++j)
                         bottle[next++] = bottle[i * n + j];
                 } else {
 //                System.err.println("Keeping batch " + i);
                 }
+            // bottleの先頭 n * used は毒密度が高いので後ろに回す
+            for(int w: warning) bottle[next++] = w;
             testStrips -= used;
             numBottles = next;
         }
@@ -166,8 +175,9 @@ public class PoisonedWine {
         if(strip == 0) return 1;
         int widMin = widProb[wine][80];
         int widMax = round == 1 ? widProb[wine][50] : widProb[wine][30];
-        System.out.printf("wid range: %d - %d (%d)\n", widMin, widMax, widMax - widMin);
-        final int interval = Math.max(1, (widMax - widMin) / 100);
+        final int interval = Math.max(1, (widMax - widMin) / 20);
+        System.out.printf("wid range: %d - %d (%d) int:%d\n",
+                widMin, widMax, widMax - widMin, interval);
         for(int prob = widMin; prob <= wine - P && prob <= widMax; prob += interval) {
             int wid = prob;
 //            int wid = prob == 8 ?
@@ -179,6 +189,7 @@ public class PoisonedWine {
                 max = exp;
                 argmax = wid;
             }
+            if(interval > 1) System.out.println("fin wid: " + wid);
         }
         if(est < 0) est = max;
         System.out.println(max);
@@ -208,7 +219,7 @@ public class PoisonedWine {
             int widMax = round == 2 ? widProb[wine][50] : widProb[wine][30];
             widMax = Math.min(widMax, wine / wid);
             if(widMax < widMin) widMax = widMin;
-            final int interval = Math.max(1, (widMax - widMin) / 100);
+            final int interval = Math.max(1, (widMax - widMin) / 20);
             for(int prob = widMin; prob <= widMax; prob += interval) {
                 int nextWid = prob;
 //                int nextWid = prob == 8 ?

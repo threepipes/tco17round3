@@ -75,9 +75,10 @@ public class PoisonedWineVis {
 
     TestInfo testCase;
     long time;
+    static long seedL;
     public double runTest(String seed) {
         try {
-            long seedL = Long.parseLong(seed);
+            seedL = Long.parseLong(seed);
             generateTestCase(seedL);
             testCase = new TestInfo(seedL, numBottles, testStrips, testRounds, numPoison);
             time = System.currentTimeMillis();
@@ -192,9 +193,9 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 50;
-        long seed = 1;
-//        for(int prob = 1; prob < 10; prob++) {
+        int testN = 500;
+        for(int p = 0; p <= 10; p++) {
+            long seed = p * testN + 1;
             double scoreSum = 0;
             List<TestInfo> testList = new ArrayList<>(testN);
             for (long i = seed; i < testN + seed; i++) {
@@ -209,8 +210,8 @@ public class PoisonedWineVis {
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-//            writeTestInfo(testList, String.format("result_dp.csv"));
-//        }
+            writeTestInfo(testList, String.format("result_dp_%2d.csv", p));
+        }
     }
     // -----------------------------------------
 
