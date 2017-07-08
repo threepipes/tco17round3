@@ -192,7 +192,7 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 500;
+        int testN = 50;
         long seed = 1;
 //        for(int prob = 1; prob < 10; prob++) {
             double scoreSum = 0;

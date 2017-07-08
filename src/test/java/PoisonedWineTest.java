@@ -1,5 +1,7 @@
 import org.junit.Test;
 
+import java.util.Random;
+
 public class PoisonedWineTest {
 //    @Test
 //    public void testTestFuncs() {
@@ -58,6 +60,59 @@ public class PoisonedWineTest {
 
     @Test
     public void testSeed() {
-        PoisonedWineVis f = new PoisonedWineVis("387");
+        double sum = 0;
+        int testcase = 20;
+        for(int i = 0; i < testcase; i++) {
+            PoisonedWine.randSeed = i + 1;
+            PoisonedWineVis f = new PoisonedWineVis("485");
+            sum += f.testScore;
+        }
+        System.out.println("Result: " + (sum / testcase));
     }
+
+//    @Test
+//    public void testCalcDeath() {
+//        /**/
+//        Random rand = new Random(1);
+//        int wine = 20;
+//        for(int test = 0; test < 30; test++) {
+//            PoisonedWine pw = new PoisonedWine();
+//            int poison = rand.nextInt(7) + 1;
+//            int strip = rand.nextInt(5) + 1;
+//            int wid = rand.nextInt(wine / strip - 1) + 1;
+//            double[] brute = pw.testProbDeath(wine, wid, strip, poison);
+//            pw.P = poison;
+//            pw.S = strip;
+//            double[][] calcA = pw.calcDeath(wine, wid);
+//            System.out.printf("poi:%d str:%d wid:%d\n", poison, strip, wid);
+//            try {
+//                double[] calc = calcA[strip];
+//                for (int death = 0; death <= strip; death++) {
+//                    System.out.printf("b:%f c:%f reldiff:%f\n",
+//                            brute[death], calc[death],
+//                            (brute[death] - calc[death]) / Math.max(brute[death], calc[death]));
+//                }
+//            } catch (ArrayIndexOutOfBoundsException e) {
+//                System.err.println("");
+//            }
+//        }
+//        /**/
+//        /*/
+//        PoisonedWine pw = new PoisonedWine();
+//        int wine = 8;
+//        int poison = 1;
+//        int strip = 2;
+//        int wid = 3;
+//        double[] brute = pw.testProbDeath(wine, wid, strip, poison);
+//        for(int i = 0; i < brute.length; i++) {
+//            System.out.printf("%d: %f\n", i, brute[i]);
+//        }
+//        pw.P = poison;
+//        pw.S = strip;
+//        double[][] calc = pw.calcDeath(wine, wid);
+//        for(int i = 0; i <= strip; i++) {
+//            System.out.printf("%d: %f\n", i, calc[strip][i]);
+//        }
+//        /**/
+//    }
 }
