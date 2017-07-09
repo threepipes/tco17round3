@@ -165,32 +165,30 @@ public class PoisonedWine {
     }
 
     int estimateBestWidth(int wine, int strip, int round) {
-        double max = 0;
-        int argmax = 1;
         // どういった場合にどういった幅がベストか確認し，ある程度幅を絞る必要がある TODO
         if(strip == 0) return 1;
-        int widMin = widProb[wine][80];
-        int widMax = round == 1 ? widProb[wine][50] : widProb[wine][30];
-        final int interval = Math.max(1, (widMax - widMin) / 20);
-        System.out.printf("wid range: %d - %d (%d) int:%d\n",
-                widMin, widMax, widMax - widMin, interval);
-        for(int prob = widMin; prob <= wine - P && prob <= widMax; prob += interval) {
-            int wid = prob;
-//            int wid = prob == 8 ?
-//                    wine / strip :
-//                    widProb[wine][prob * 10];
-            if(wid <= 0) continue;
-            double exp = estDfs(wine, Math.min(strip, wine / wid), round, wid);
-            if(exp > max) {
-                max = exp;
-                argmax = wid;
+        int left = widProb[wine][80];
+        int right = widProb[wine][30];
+        System.out.printf("wid range: %d - %d (%d)\n",
+                left, right, right - left);
+        int wid = left;
+        while(left <= right) {
+            int wid1 = (left * 2 + right) / 3;
+            int wid2 = (left + right * 2) / 3;
+            double exp1 = estDfs(wine, Math.min(strip, wine / wid1), round, wid1);
+            double exp2 = estDfs(wine, Math.min(strip, wine / wid2), round, wid2);
+            if(exp1 < exp2) {
+                left = wid1 + 1;
+                wid = wid2;
+            } else {
+                right = wid2 - 1;
+                wid = wid1;
             }
             if(round >= 2 && wine > 1000 && P > 8)
-                System.out.printf("fin wid: %d  exp: %f  use:%d\n", wid, exp, Math.min(strip, wine / wid));
+                System.out.printf("wid1:%d exp1:%f wid2:%d exp2:%f\n",
+                        wid1, exp1, wid2, exp2);
         }
-        if(est < 0) est = max;
-        System.out.println(max);
-        return argmax;
+        return wid;
     }
 
     HashMap<Long, Double> estCache = new HashMap<>();
@@ -203,8 +201,7 @@ public class PoisonedWine {
         final int useStrips = Math.min(strip, wine / wid);
         final int saveStrips = strip - useStrips;
         for(int death = 0; death <= useStrips && death <= P; death++) {
-            double probOcc = calcDeath(wine, wid)[useStrips][death];
-            double maxStrategy = 0;
+            final double probOcc = calcDeath(wine, wid)[useStrips][death];
             final int s0 = useStrips - death;
             final int nextStrips = s0 + saveStrips;
             final int NEXT_WINE = wine - s0 * wid;
@@ -212,19 +209,21 @@ public class PoisonedWine {
                 res += probOcc * (W - NEXT_WINE);
                 continue;
             }
-            final int widMin = widProb[wine][80];
-            int widMax = round == 2 ? widProb[wine][50] : widProb[wine][30];
-            widMax = Math.min(widMax, wine / wid);
-            if(widMax < widMin) widMax = widMin;
-            final int interval = Math.max(1, (widMax - widMin) / 20);
-            for(int prob = widMin; prob <= widMax; prob += interval) {
-                int nextWid = prob;
-//                int nextWid = prob == 8 ?
-//                        wine / strip :
-//                        widProb[wine][prob * 10];
-                if(nextWid <= 0) continue;
-                maxStrategy = Math.max(maxStrategy,
-                        estDfs(NEXT_WINE, nextStrips, round - 1, nextWid));
+            double maxStrategy = 0;
+            int left = widProb[wine][80];
+            int right = Math.max(Math.min(widProb[wine][30], wine / wid), left);
+            while(left <= right) {
+                int wid1 = (left * 2 + right) / 3;
+                int wid2 = (left + right * 2) / 3;
+                double exp1 = estDfs(NEXT_WINE, nextStrips, round - 1, wid1);
+                double exp2 = estDfs(NEXT_WINE, nextStrips, round - 1, wid2);
+                if(exp1 < exp2) {
+                    left = wid1 + 1;
+                    maxStrategy = exp2;
+                } else {
+                    right = wid2 - 1;
+                    maxStrategy = exp1;
+                }
             }
             res += probOcc * maxStrategy;
         }
