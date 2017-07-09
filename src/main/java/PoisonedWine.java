@@ -66,15 +66,16 @@ public class PoisonedWine {
         }
 //        shuffle(bottle);
         for(int test = 0; test < testRounds && testStrips > 0; test++) {
-            final long VAL = (long)W * S * (testRounds - test)
+            final long VAL = (long)numBottles * testStrips * (testRounds - test)
                     * (testRounds - test) * P / 1000;
             curW = numBottles;
             int n;
             if(VAL < 9000 || P < 10) {
                 n = estimateBestWidth(numBottles, testStrips, testRounds - test);
-                System.out.printf("wine:%4d poi:%3d str:%2d n:%d\t(prob:%f)\n",
-                        numBottles, numPoison, testStrips, n, probNoPoison(numBottles, numPoison, n));
+                System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d\t(prob:%f)\n",
+                        numBottles, numPoison, testStrips, n, testRounds - test, probNoPoison(numBottles, numPoison, n));
             } else {
+                // probはround, stripによって変更したい
                 n = searchWidByProb(numBottles, numPoison, 40);
             }
 //            int n = searchWidByProb(numBottles, numPoison, searchProb);
@@ -106,6 +107,7 @@ public class PoisonedWine {
 //                System.err.println("Keeping batch " + i);
                 }
             // bottleの先頭 n * used は毒密度が高いので後ろに回す
+            // 区間ごとに毒密度管理するとか -> たぶん地獄
             for(int w: warning) bottle[next++] = w;
             testStrips -= used;
             numBottles = next;
@@ -132,7 +134,6 @@ public class PoisonedWine {
 
     int searchWidByProb(int wine, int poison, int probability) {
         double prob = probability / 100.0;
-        // probを100分率にすることで前計算できる TODO
         int left = 1;
         int right = wine - poison;
         int ans = -1;
@@ -205,7 +206,7 @@ public class PoisonedWine {
         double res = 0;
         final int useStrips = Math.min(strip, wine / wid);
         final int saveStrips = strip - useStrips;
-        for(int death = 0; death <= useStrips; death++) {
+        for(int death = 0; death <= useStrips && death <= P; death++) {
             double probOcc = calcDeath(wine, wid)[useStrips][death];
             double maxStrategy = 0;
             final int s0 = useStrips - death;
