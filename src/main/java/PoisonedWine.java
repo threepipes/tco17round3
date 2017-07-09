@@ -68,7 +68,7 @@ public class PoisonedWine {
                     * (testRounds - test) * P / 1000;
             curW = numBottles;
             int n;
-            if((VAL < 5000 || P < 10) && !(numBottles > 1000 && testRounds - test >= 3 && P >= 25 && testStrips >= 3)) {
+            if((VAL < 5000 || P < 10) && !(numBottles > 1000 && testRounds - test >= 3 && P >= 18 && testStrips >= 3)) {
                 if(numPoison >= 15 && testRounds - test > 1 && numBottles > 1000)
                     System.out.printf("begin w:%d t:%d p:%d s:%d\n",
                             numBottles, testRounds - test, numPoison, testStrips);
@@ -165,10 +165,10 @@ public class PoisonedWine {
     }
 
     int estimateBestWidth(int wine, int strip, int round) {
-        // どういった場合にどういった幅がベストか確認し，ある程度幅を絞る必要がある TODO
+        // 使うstripを変化させるとか，毒密度の偏りとか TODO
         if(strip == 0) return 1;
-        int left = widProb[wine][80];
-        int right = widProb[wine][30];
+        int left = Math.max(1, widProb[wine][80]);
+        int right = Math.max(widProb[wine][30], left);
         System.out.printf("wid range: %d - %d (%d)\n",
                 left, right, right - left);
         int wid = left;
@@ -194,7 +194,7 @@ public class PoisonedWine {
     HashMap<Long, Double> estCache = new HashMap<>();
     double estDfs(int wine, int strip, int round, int wid) {
         if(round == 0 || wine == P || strip == 0) return W - wine;
-        long id = (long) wine * W * S * R + (long) strip * W * R
+        final long id = (long) wine * W * S * R + (long) strip * W * R
                 + round * W + wid;
         if(estCache.containsKey(id)) return estCache.get(id);
         double res = 0;
@@ -210,7 +210,7 @@ public class PoisonedWine {
                 continue;
             }
             double maxStrategy = 0;
-            int left = widProb[wine][80];
+            int left = Math.max(1, widProb[wine][80]);
             int right = Math.max(Math.min(widProb[wine][30], wine / wid), left);
             while(left <= right) {
                 int wid1 = (left * 2 + right) / 3;
