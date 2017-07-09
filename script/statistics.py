@@ -1,3 +1,7 @@
+"""
+雑多な統計を取るための簡易スクリプト
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -19,6 +23,9 @@ def histogram(x, bins, xlim=None):
 
 
 def stat_poison_dist():
+    """
+    毒の数の分布を計測
+    """
     x = []
     for wine in range(50, 10001):
         for poison in range(1, wine // 50 + 1):
@@ -57,6 +64,9 @@ def load(_file_name):
 
 
 def stat_point_dist():
+    """
+    得点分布を計算
+    """
     x = load(file_name)
 
     x = np.array(x)
@@ -64,10 +74,14 @@ def stat_point_dist():
     print('med', np.median(x))
     print('mean < x', len(x[x > np.mean(x)]))
 
-    # histogram(x, 500, xlim=(0, 0.2))
+    histogram(x, 500, xlim=(0, 0.2))
 
 
 def stat_point_weight():
+    """
+    得点の累積和グラフ
+    全体の得点に対して，何点くらいのケースが鍵になってるのか知りたかった
+    """
     x = [0] + load(file_name)
     y = sorted(x)
     x = sorted(x)
