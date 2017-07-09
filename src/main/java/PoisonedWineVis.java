@@ -204,13 +204,14 @@ public class PoisonedWineVis {
                 scoreSum += f.testScore;
                 TestInfo t = f.testCase;
                 t.sampleScore = f.testScore;
+                t.time = f.time;
                 testList.add(t);
                 System.out.println("current: " + (scoreSum / (i - seed + 1)));
             }
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, String.format("result_dp_tri_%2d.csv", p));
+            writeTestInfo(testList, String.format("result_dp_reg_%2d.csv", p));
         }
     }
     // -----------------------------------------
@@ -238,6 +239,7 @@ class TestInfo {
     private int testRounds;
     private int numPoison;
     double sampleScore;
+    long time;
     public TestInfo(long seed, int numBottles, int testStrips, int testRounds, int numPoison) {
         this.seed = seed;
         this.numBottles = numBottles;
@@ -248,7 +250,7 @@ class TestInfo {
 
     @Override
     public String toString() {
-        return String.format("%d,%f", seed, sampleScore);
+        return String.format("%d,%f,%d", seed, sampleScore, time);
     }
 }
 
