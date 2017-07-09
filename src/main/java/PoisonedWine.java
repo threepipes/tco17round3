@@ -49,7 +49,6 @@ public class PoisonedWine {
         }
     }
 
-    static double searchProb = 0.3;
     int W, P, S, R;
     int curW;
     double est = -1;
@@ -64,7 +63,6 @@ public class PoisonedWine {
         for(int i = 0; i < numBottles; i++) {
             bottle[i] = i;
         }
-//        shuffle(bottle);
         for(int test = 0; test < testRounds && testStrips > 0; test++) {
             final long VAL = (long)numBottles * testStrips * (testRounds - test)
                     * (testRounds - test) * P / 1000;
@@ -86,10 +84,7 @@ public class PoisonedWine {
                 }
                 n = searchWidByProb(numBottles, numPoison, prob);
             }
-//            int n = searchWidByProb(numBottles, numPoison, searchProb);
             if(n == -1) n = (numBottles + testStrips - 1) / testStrips;
-//        System.err.println("Batch size " + n);
-//            String[] tests = new String[testStrips];
             List<String> tests = new ArrayList<>();
             for (int i = 0; i < testStrips; ++i) {
                 if(i * n >= numBottles) break;
@@ -104,15 +99,12 @@ public class PoisonedWine {
             List<Integer> warning = new ArrayList<>();
             for (int i = 0; i * n < numBottles; ++i)
                 if (i >= testRes.length || testRes[i] == 1) {
-                    // poison detected - throw out all bottles in this batch
                     if(i < testRes.length) {
                         for (int j = 0; j < n && i * n + j < numBottles; ++j)
                             warning.add(bottle[i * n + j]);
                         used++;
                     } else for (int j = 0; j < n && i * n + j < numBottles; ++j)
                         bottle[next++] = bottle[i * n + j];
-                } else {
-//                System.err.println("Keeping batch " + i);
                 }
             // bottleの先頭 n * used は毒密度が高いので後ろに回す
             // 区間ごとに毒密度管理するとか -> たぶん地獄
@@ -159,11 +151,6 @@ public class PoisonedWine {
 
     double probNoPoison(int wine, int poison, int n) {
         // n本選んで毒が入っていない確率
-//        double ans = 1;
-//        for(int i = 0; i < n; i++) {
-//            ans *= (wine - poison - i) / (double)(wine - i);
-//        }
-//        return ans;
         if(n > wine - poison) return poison > 0 ? 1 : 0;
         return perm[wine - poison]
                 .multiply(perm[wine - n], MathContext.DECIMAL64)
@@ -270,14 +257,6 @@ public class PoisonedWine {
                     }
                 }
             }
-
-//            for(int j = 0; j <= P; j++) {
-//                for(int k = 0; k <= deathMax; k++) {
-//                    System.out.printf("%2.5f ", dp[i + 1][j][k]);
-//                }
-//                System.out.println();
-//            }
-//            System.out.println();
         }
         double[][] res = new double[strip + 1][strip + 1];
         for(int s = 1; s <= strip; s++) {
