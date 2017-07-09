@@ -70,13 +70,21 @@ public class PoisonedWine {
                     * (testRounds - test) * P / 1000;
             curW = numBottles;
             int n;
-            if(VAL < 9000 || P < 10) {
+            if((VAL < 5000 || P < 10) && !(numBottles > 1000 && testRounds - test >= 3 && P >= 25 && testStrips >= 3)) {
+                if(numPoison >= 15 && testRounds - test > 1 && numBottles > 1000)
+                    System.out.printf("begin w:%d t:%d p:%d s:%d\n",
+                            numBottles, testRounds - test, numPoison, testStrips);
                 n = estimateBestWidth(numBottles, testStrips, testRounds - test);
                 System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d\t(prob:%f)\n",
                         numBottles, numPoison, testStrips, n, testRounds - test, probNoPoison(numBottles, numPoison, n));
             } else {
-                // probはround, stripによって変更したい
-                n = searchWidByProb(numBottles, numPoison, 40);
+                // 後でもっときれいな推定
+                int prob = 40;
+                if(testRounds - test >= 3) {
+                    if(testStrips <= 6) prob = 80;
+                    else prob = 70;
+                }
+                n = searchWidByProb(numBottles, numPoison, prob);
             }
 //            int n = searchWidByProb(numBottles, numPoison, searchProb);
             if(n == -1) n = (numBottles + testStrips - 1) / testStrips;
@@ -190,7 +198,8 @@ public class PoisonedWine {
                 max = exp;
                 argmax = wid;
             }
-            if(interval > 1) System.out.println("fin wid: " + wid);
+            if(round >= 2 && wine > 1000 && P > 8)
+                System.out.printf("fin wid: %d  exp: %f  use:%d\n", wid, exp, Math.min(strip, wine / wid));
         }
         if(est < 0) est = max;
         System.out.println(max);

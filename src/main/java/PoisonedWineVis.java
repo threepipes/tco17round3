@@ -193,8 +193,8 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 500;
-        for(int p = 0; p <= 10; p++) {
+        int testN = 250;
+        for(int p = 0; p <= 8; p++) {
             long seed = p * testN + 1;
             double scoreSum = 0;
             List<TestInfo> testList = new ArrayList<>(testN);
@@ -205,7 +205,7 @@ public class PoisonedWineVis {
                 TestInfo t = f.testCase;
                 t.sampleScore = f.testScore;
                 testList.add(t);
-                System.out.println("current: " + (scoreSum / i));
+                System.out.println("current: " + (scoreSum / (i - seed + 1)));
             }
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
@@ -216,7 +216,7 @@ public class PoisonedWineVis {
     // -----------------------------------------
 
     static void writeTestInfo(List<TestInfo> testList, String filename) {
-        File file = new File(System.getenv("DATA_PATH") + "/0708/" + filename);
+        File file = new File(System.getenv("DATA_PATH") + "/0709/" + filename);
         try(PrintWriter out = new PrintWriter(file)) {
             out.println("id,"+filename);
             for(TestInfo t: testList) {

@@ -64,7 +64,7 @@ public class PoisonedWineTest {
         int testcase = 20;
         for(int i = 0; i < testcase; i++) {
             PoisonedWine.randSeed = i + 1;
-            PoisonedWineVis f = new PoisonedWineVis("87");
+            PoisonedWineVis f = new PoisonedWineVis("8");
             sum += f.testScore;
         }
         System.out.println("Result: " + (sum / testcase));
