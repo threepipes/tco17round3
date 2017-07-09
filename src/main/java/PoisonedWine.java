@@ -70,7 +70,15 @@ public class PoisonedWine {
         for(int i = 0; i < numBottles; i++) {
             bottle[i] = i;
         }
-        for(int test = 0; test < testRounds && testStrips > 0; test++) {
+        shuffle(bottle);
+        for(int test = 0; test < testRounds && testStrips > 0 && numBottles > P; test++) {
+            if(P == 1 && (numBottles < (1 << testStrips) || testRounds - test == 1)) {
+                // 1発でワインを求められるケース
+                // 毒の偏りを利用して，もう少し他のケースでもfind oneできる場合を探す TODO
+                System.out.println("find one!");
+                numBottles = findOnePoison(bottle, numBottles, numBottles, testStrips);
+                continue;
+            }
             final long VAL = (long)numBottles * testStrips * (testRounds - test)
                     * (testRounds - test) * P / 1000;
             curW = numBottles;
@@ -93,6 +101,7 @@ public class PoisonedWine {
                         + POIS_COEF * P
                         + ROUD_COEF * (testRounds - test)
                         + STRP_COEF * testStrips;
+                if(prob >= 100) prob = 99;
                 if(reg < 0) reg = prob;
                 n = searchWidByProb(numBottles, numPoison, (int)Math.round(prob));
             }
@@ -128,9 +137,9 @@ public class PoisonedWine {
         for (int i = 0; i < numBottles; ++i)
             ret[i] = bottle[i];
         int saved = W - numBottles;
-//        if(est >= 0)
-//            System.out.printf("est:%.20f real:%d diff:%.20f diff/acc:%.20f \n",
-//                est, saved, est - saved, (est - saved) / (W - P));
+        if(est >= 0)
+            System.out.printf("est:%.20f real:%d diff:%.20f diff/acc:%.20f \n",
+                est, saved, est - saved, (est - saved) / (W - P));
         System.out.printf("end seed:%d reg:%f cacheEst:%d cacheDeath:%d\n",
                 PoisonedWineVis.seedL, reg, estCache.size(), deathCache.size());
         return ret;
@@ -167,9 +176,9 @@ public class PoisonedWine {
         // n本選んで毒が入っていない確率
         if(n > wine - poison) return poison > 0 ? 1 : 0;
         return perm[wine - poison]
-                .multiply(perm[wine - n], MathContext.DECIMAL64)
-                .divide(perm[wine - poison - n], MathContext.DECIMAL64)
-                .divide(perm[wine], MathContext.DECIMAL64).doubleValue();
+                .multiply(perm[wine - n], MathContext.DECIMAL32)
+                .divide(perm[wine - poison - n], MathContext.DECIMAL32)
+                .divide(perm[wine], MathContext.DECIMAL32).doubleValue();
     }
 
     int getWidInterval(int wine, int strip) {
@@ -186,6 +195,7 @@ public class PoisonedWine {
 //        System.out.printf("wid range: %d - %d (%d)\n",
 //                left, right, right - left);
         int wid = left;
+        double expMax = 0;
         while(left <= right) {
             int wid1 = (left * 2 + right) / 3;
             int wid2 = (left + right * 2) / 3;
@@ -201,7 +211,9 @@ public class PoisonedWine {
             if(round >= 2 && wine > 1000 && P > 8)
                 System.out.printf("wid1:%d exp1:%f wid2:%d exp2:%f\n",
                         wid1, exp1, wid2, exp2);
+            expMax = Math.max(exp1, exp2);
         }
+        if(est < 0) est = expMax;
         return wid;
     }
 
@@ -247,6 +259,7 @@ public class PoisonedWine {
 
     // 使い方: calcDeath(wine, wid)[strip][death] -> 生起確率
     HashMap<Integer, double[][]> deathCache = new HashMap<>();
+    double[] probCache = new double[201];
     double[][] calcDeath(int wine, int wid) {
         int id = wine * W + wid;
         if(deathCache.containsKey(id)) return deathCache.get(id);
@@ -260,13 +273,16 @@ public class PoisonedWine {
         double[][][] dp = new double[strip + 1][P + 1][deathMax + 1];
         dp[0][P][0] = 1;
         for(int i = 0; i < strip; i++) {
+            final int wineRem = wine - i * wid;
             for(int j = 0; j <= P; j++) {
+                for(int l = 0; l <= Math.min(j, wid); l++) {
+                    probCache[l] = prob(wineRem, j, wid, l);
+                }
                 for(int k = 0; k <= deathMax; k++) {
                     if(dp[i][j][k] == 0) continue;
-                    int wineRem = wine - i * wid;
-                    dp[i + 1][j][k] += prob(wineRem, j, wid, 0) * dp[i][j][k];
+                    dp[i + 1][j][k] += probCache[0] * dp[i][j][k];
                     for(int l = 1; l <= Math.min(j, wid); l++) {
-                        dp[i + 1][j - l][k + 1] += prob(wineRem, j, wid, l) * dp[i][j][k];
+                        dp[i + 1][j - l][k + 1] += probCache[l] * dp[i][j][k];
                     }
                 }
             }
@@ -284,6 +300,71 @@ public class PoisonedWine {
     }
 
     /**
+     * 引数3のfindOnePoisonを実行して，ボトルを整形する
+     * @param bottle ワインリスト
+     * @param range 調査したい(毒が1以下と判明している)範囲
+     * @param trueBottleNum 実際に現在残っているワイン
+     * @param strip
+     * @return 調査後のワインリストサイズ
+     */
+    int findOnePoison(int[] bottle, int range, int trueBottleNum, int strip) {
+        List<Integer> bad = findOnePoison(bottle, range, strip);
+        int idx = 0;
+        for(int i = 0; i < trueBottleNum - range; i++) {
+            bottle[idx++] = bottle[range + i];
+        }
+        for(int b: bad) {
+            bottle[idx++] = b;
+        }
+        return idx;
+    }
+
+    /**
+     * 範囲内に毒が1つ以下の場合，ワインから毒を見つける有名な某問題の手法を用いる
+     * 毒可能性のあるワインのリストを返す
+     * 当然ながらtestRoundが残っていること前提
+     * (注意: bottleの内容は変更しないので，goodbottleに基づいてbottleを修正すること)
+     * @param bottle ワインリスト
+     * @param wine 先頭からwine本のワインについて考える
+     * @param strip
+     * @return 危険ワインリスト
+     */
+    List<Integer> findOnePoison(int[] bottle, int wine, int strip) {
+        String[] test = new String[strip];
+        for(int i = 1; i <= wine; i++) {
+            // iの下位stripビットを見て，立ってるビットに相当するtestStripにワインを加える
+            // 1-indexedに注意(毒が0である場合を考慮するため)
+            for(int j = 0; j < strip; j++) {
+                if((i & 1 << j) == 0) continue;
+                if(test[j] == null) test[j] = "" + bottle[i - 1];
+                else test[j] += "," + bottle[i - 1];
+            }
+        }
+        int used = strip;
+        for(int i = 0; i < strip; i++) {
+            if(test[i] == null) used--;
+        }
+        if(used < strip) {
+            String[] resized = new String[used];
+            System.arraycopy(test, 0, resized, 0, used);
+            test = resized;
+        }
+        int[] result = PoisonTest.useTestStrips(test);
+        int bit = 0;
+        for(int i = 0; i < test.length; i++) {
+            if(result[i] == 1) bit |= 1 << i;
+        }
+        List<Integer> bad = new ArrayList<>();
+        // 下位stripビットのビットパターンがbitに等しい場合毒の可能性
+        int mask = (1 << strip) - 1;
+        for(int i = 1; i <= wine; i++) {
+            if((i & mask) == bit) bad.add(bottle[i - 1]);
+        }
+        return bad;
+    }
+
+//    HashMap<Long, Double> probCombCache = new HashMap<>();
+    /**
      * stripにwid本のワインを使ったとき，毒がhit本引っかかる確率
      * @param wine ワイン
      * @param poison 毒
@@ -292,10 +373,17 @@ public class PoisonedWine {
      * @return hit本の毒が引っかかる確率
      */
     double prob(int wine, int poison, int wid, int hit) {
+        // このif文も消したい
         if(comb[wid][hit] == null || comb[wine-wid][poison-hit] == null || comb[wine][poison] == null)
             return 0;
-        return comb[wid][hit].multiply(comb[wine-wid][poison-hit], MathContext.DECIMAL64)
-                .divide(comb[wine][poison], MathContext.DECIMAL64).doubleValue();
+//        final long id = (long) wine * W * P * P
+//                + (long) poison * W * P
+//                + (long) wid * P + hit;
+//        if(probCombCache.containsKey(id)) return probCombCache.get(id);
+        return comb[wid][hit].multiply(comb[wine-wid][poison-hit], MathContext.DECIMAL32)
+                .divide(comb[wine][poison], MathContext.DECIMAL32).doubleValue();
+//        probCombCache.put(id, res);
+//        return res;
     }
 
     void init() {

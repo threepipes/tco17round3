@@ -193,9 +193,9 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 250;
+        int testN = 1;
         for(int p = 0; p <= 8; p++) {
-            long seed = p * testN + 1;
+            long seed = 14;//p * testN + 1;
             double scoreSum = 0;
             List<TestInfo> testList = new ArrayList<>(testN);
             for (long i = seed; i < testN + seed; i++) {
@@ -211,13 +211,13 @@ public class PoisonedWineVis {
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, String.format("result_dp_reg_%2d.csv", p));
+//            writeTestInfo(testList, String.format("result_dp_fast_%2d.csv", p));
         }
     }
     // -----------------------------------------
 
     static void writeTestInfo(List<TestInfo> testList, String filename) {
-        File file = new File(System.getenv("DATA_PATH") + "/0709/" + filename);
+        File file = new File(System.getenv("DATA_PATH") + "/0710/" + filename);
         try(PrintWriter out = new PrintWriter(file)) {
             out.println("id,"+filename);
             for(TestInfo t: testList) {

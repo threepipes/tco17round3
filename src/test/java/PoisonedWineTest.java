@@ -58,13 +58,20 @@ public class PoisonedWineTest {
 //        System.out.println("wid: " + wid);
 //    }
 
+    int[] oneCase = {
+            10, 18, 31, 32, 55, 80,
+            111, 166, 198, 210, 220,
+            228, 267, 272, 295, 301,
+            341, 437, 461,
+    };
+
     @Test
     public void testSeed() {
         double sum = 0;
         int testcase = 20;
         for(int i = 0; i < testcase; i++) {
             PoisonedWine.randSeed = i + 1;
-            PoisonedWineVis f = new PoisonedWineVis("8");
+            PoisonedWineVis f = new PoisonedWineVis("14");
             sum += f.testScore;
         }
         System.out.println("Result: " + (sum / testcase));
