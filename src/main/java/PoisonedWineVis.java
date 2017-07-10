@@ -74,12 +74,16 @@ public class PoisonedWineVis {
     }
 
     TestInfo testCase;
+    long time;
+    static long seedL;
     public double runTest(String seed) {
         try {
-            long seedL = Long.parseLong(seed);
+            seedL = Long.parseLong(seed);
             generateTestCase(seedL);
             testCase = new TestInfo(seedL, numBottles, testStrips, testRounds, numPoison);
+            time = System.currentTimeMillis();
             int[] ret = new PoisonedWine(this).testWine(numBottles, testStrips, testRounds, numPoison);
+            time = System.currentTimeMillis() - time;
             if (failure) {
                 return 0;
             }
@@ -173,7 +177,7 @@ public class PoisonedWineVis {
                 } catch (Exception e) { e.printStackTrace(); }
             }
             testScore = runTest(seed);
-//            System.out.println("Score = " + testScore);
+            System.out.printf("seed: %3s  Score: %f  time: %d\n", seed, testScore, time);
             if (proc != null)
                 try { proc.destroy(); }
                 catch (Exception e) { e.printStackTrace(); }
@@ -189,30 +193,31 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-//        for(int test = 3; test < 10; test++) {
-            int testN = 2000;
-            long seed = 1;
+        int testN = 250;
+        for(int p = 0; p <= 8; p++) {
+            long seed = p * testN + 1;
             double scoreSum = 0;
             List<TestInfo> testList = new ArrayList<>(testN);
             for (long i = seed; i < testN + seed; i++) {
-//                PoisonedWine.lowerProb = (double) test / 10;
+//                PoisonedWine.searchProb = prob / 10.0;
                 PoisonedWineVis f = new PoisonedWineVis(String.valueOf(i));
                 scoreSum += f.testScore;
                 TestInfo t = f.testCase;
                 t.sampleScore = f.testScore;
+                t.time = f.time;
                 testList.add(t);
+                System.out.println("current: " + (scoreSum / (i - seed + 1)));
             }
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, "result_greedy.csv");
-//            writeTestInfo(testList, String.format("result_0.%d0.csv", ""));
-//        }
+            writeTestInfo(testList, String.format("result_dp_fast_nx_%2d.csv", p));
+        }
     }
     // -----------------------------------------
 
     static void writeTestInfo(List<TestInfo> testList, String filename) {
-        File file = new File(System.getenv("DATA_PATH") + filename);
+        File file = new File(System.getenv("DATA_PATH") + "/0710/" + filename);
         try(PrintWriter out = new PrintWriter(file)) {
             out.println("id,"+filename);
             for(TestInfo t: testList) {
@@ -234,6 +239,7 @@ class TestInfo {
     private int testRounds;
     private int numPoison;
     double sampleScore;
+    long time;
     public TestInfo(long seed, int numBottles, int testStrips, int testRounds, int numPoison) {
         this.seed = seed;
         this.numBottles = numBottles;
@@ -244,7 +250,7 @@ class TestInfo {
 
     @Override
     public String toString() {
-        return String.format("%d,%f", seed, sampleScore);
+        return String.format("%d,%f,%d", seed, sampleScore, time);
     }
 }
 

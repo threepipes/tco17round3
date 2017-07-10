@@ -1,10 +1,12 @@
 import org.junit.Test;
 
+import java.util.Random;
+
 public class PoisonedWineTest {
-    @Test
-    public void testTestFuncs() {
-        PoisonedWine pw = new PoisonedWine();
-        pw.testProb();
+//    @Test
+//    public void testTestFuncs() {
+//        PoisonedWine pw = new PoisonedWine();
+//        pw.testProb();
 //        for(int wine = 100; wine <= 200; wine += 10) {
 //            for(int poison = wine / 2 - 10; poison <= wine / 2; poison++) {
 //                for(int wid = 5; wid <= 10; wid++) {
@@ -42,5 +44,90 @@ public class PoisonedWineTest {
 //                System.out.printf("death=%d scale=%d prob=%f\n", death, scale, prob);
 //            }
 //        }
+//    }
+
+//    @Test
+//    public void testEstDP() {
+//        PoisonedWine pw = new PoisonedWine();
+//        pw.W = 137;
+//        pw.curW = pw.W;
+//        pw.P = 1;
+//        pw.S = 9;
+//        pw.R = 4;
+//        int wid = pw.estimateBestWidth(pw.W, pw.S, pw.R);
+//        System.out.println("wid: " + wid);
+//    }
+
+    int[] oneCase = {
+            10, 18, 31, 32, 55, 80,
+            111, 166, 198, 210, 220,
+            228, 267, 272, 295, 301,
+            341, 437, 461,
+    };
+
+    int[] tleCase = {
+            381, 474, 330, 305, 359, 489, 365, 459
+    };
+
+    int[] zeroCase = {
+        22, 37, 43
+    };
+
+    @Test
+    public void testSeed() {
+        double sum = 0;
+        int testcase = zeroCase.length;
+        for(int i = 0; i < testcase; i++) {
+            PoisonedWine.randSeed = i + 1;
+            PoisonedWineVis f = new PoisonedWineVis("" + zeroCase[i]);
+            sum += f.testScore;
+        }
+        System.out.println("Result: " + (sum / testcase));
     }
+
+//    @Test
+//    public void testCalcDeath() {
+//        /**/
+//        Random rand = new Random(1);
+//        int wine = 20;
+//        for(int test = 0; test < 30; test++) {
+//            PoisonedWine pw = new PoisonedWine();
+//            int poison = rand.nextInt(7) + 1;
+//            int strip = rand.nextInt(5) + 1;
+//            int wid = rand.nextInt(wine / strip - 1) + 1;
+//            double[] brute = pw.testProbDeath(wine, wid, strip, poison);
+//            pw.P = poison;
+//            pw.S = strip;
+//            double[][] calcA = pw.calcDeath(wine, wid);
+//            System.out.printf("poi:%d str:%d wid:%d\n", poison, strip, wid);
+//            try {
+//                double[] calc = calcA[strip];
+//                for (int death = 0; death <= strip; death++) {
+//                    System.out.printf("b:%f c:%f reldiff:%f\n",
+//                            brute[death], calc[death],
+//                            (brute[death] - calc[death]) / Math.max(brute[death], calc[death]));
+//                }
+//            } catch (ArrayIndexOutOfBoundsException e) {
+//                System.err.println("");
+//            }
+//        }
+//        /**/
+//        /*/
+//        PoisonedWine pw = new PoisonedWine();
+//        int wine = 8;
+//        int poison = 1;
+//        int strip = 2;
+//        int wid = 3;
+//        double[] brute = pw.testProbDeath(wine, wid, strip, poison);
+//        for(int i = 0; i < brute.length; i++) {
+//            System.out.printf("%d: %f\n", i, brute[i]);
+//        }
+//        pw.P = poison;
+//        pw.S = strip;
+//        double[][] calc = pw.calcDeath(wine, wid);
+//        for(int i = 0; i <= strip; i++) {
+//            System.out.printf("%d: %f\n", i, calc[strip][i]);
+//        }
+//        /**/
+//    }
 }
