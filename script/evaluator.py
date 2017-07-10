@@ -61,7 +61,12 @@ def save_result(filename, result):
                 map(str, [row[col] for col in ['seed', 'score', 'time']])
             ) + '\n')
             score += row['score']
-    return score / CASE_NUM
+    average = score / CASE_NUM
+
+    with open(result_dir + 'records.csv', 'a') as f:
+        f.write('"%s",%d\n' % (filename, average))
+
+    return average
 
 
 def evaluate(filename):
