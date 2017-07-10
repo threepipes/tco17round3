@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 
-version = '0.1'
+version = '1.0'
 
 repositories {
     mavenCentral()
@@ -19,6 +19,6 @@ compileJava {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'PoisonedWine'
+        attributes 'Main-Class': 'PoisonedWineVis'
     }
 }

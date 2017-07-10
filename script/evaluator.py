@@ -17,21 +17,12 @@ eval_file = eval_dir + 'tmp.jar' # jar前提
 evaled_dir = working_dir + 'eval/'
 result_dir = working_dir + 'result/'
 
+CASE_NUM = 250
 
 def init():
     for d in [submit_dir, eval_dir, evaled_dir, result_dir]:
         if not os.path.exists(d):
-            os.mkdir(d)
-
-
-def move_file(filename):
-    """
-    評価後のファイルを物置に移動
-    """
-    timestamp = datetime.now().strftime("%m%d%H%M%S")
-    filename_new = timestamp + '_' + filename
-    shutil.move(submit_dir + filename, evaled_dir + filename_new)
-    return filename_new
+            os.makedirs(d)
 
 
 def exec_case(seed):
@@ -39,7 +30,7 @@ def exec_case(seed):
     与えられたseedでtmp.jarを実行し，scoreと実行時間を保存
     TLEの場合は100secで打ち切り
     """
-    command = ('java -jar tmp.jar -seed %d' % seed).split()
+    command = ('java -jar tmp.jar %d' % seed).split()
     try:
         timesec = time.time()
         p = Popen(command, cwd=eval_dir, stdout=PIPE, stderr=PIPE)
@@ -61,12 +52,15 @@ def exec_case(seed):
 
 
 def save_result(filename, result):
-    filename = '_result.csv'
+    filename += '_result.csv'
+    score = 0
     with open(result_dir + filename, 'w') as f:
         for row in result:
             f.write(','.join(
-                [result[col] for col in ['seed', 'score', 'time']]
+                map(str, [row[col] for col in ['seed', 'score', 'time']])
             ) + '\n')
+            score += row['score']
+    return score / CASE_NUM
 
 
 def evaluate(filename):
@@ -77,11 +71,17 @@ def evaluate(filename):
     """
     notification.slack('begin evaluation of ' + filename)
     shutil.move(submit_dir + filename, eval_file)
-    result = Parallel(n_jobs=4, verbose=5)(
-        delayed(exec_case)(seed + 1) for seed in range(2000)
+    result = Parallel(n_jobs=8, verbose=10)(
+        delayed(exec_case)(seed + 1) for seed in range(CASE_NUM)
     )
-    filename_new = move_file(eval_file)
-    save_result(filename_new, result)
+
+    # 実行フォルダからtmp.jarを評価後フォルダに移動
+    timestamp = datetime.now().strftime("%m%d%H%M%S")
+    filename_new = timestamp + '_' + filename
+    shutil.move(eval_file, evaled_dir + filename_new)
+
+    score = save_result(filename_new, result)
+    notification.slack('score of %s: %f (%d case)' % (filename, score, CASE_NUM))
 
 
 def check_newfile():

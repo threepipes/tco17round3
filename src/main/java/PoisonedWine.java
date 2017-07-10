@@ -3,8 +3,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.*;
 
-// --- cut start ---
-
+// --- sub start ---
 class BR {
     public static BufferedReader br;
     public static int readInt() {
@@ -36,8 +35,7 @@ class PoisonTest {
         }
     }
 }
-
-// --- cut end ---
+// --- sub end ---
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
@@ -488,10 +486,6 @@ public class PoisonedWine {
         return res;
     }
 
-    public PoisonedWine(PoisonedWineVis vis) {
-        PoisonTest.vis = vis;
-        init();
-    }
 
     public static void main(String[] args) {
     try {
@@ -513,4 +507,11 @@ public class PoisonedWine {
     catch (Exception e) {}
     }
     // --- cut end ---
+
+    // --- sub start ---
+    public PoisonedWine(PoisonedWineVis vis) {
+        PoisonTest.vis = vis;
+        init();
+    }
+    // --- sub end ---
 }

@@ -177,7 +177,7 @@ public class PoisonedWineVis {
                 } catch (Exception e) { e.printStackTrace(); }
             }
             testScore = runTest(seed);
-            System.out.printf("seed: %3s  Score: %f  time: %d\n", seed, testScore, time);
+//            System.out.printf("seed: %3s  Score: %f  time: %d\n", seed, testScore, time);
             if (proc != null)
                 try { proc.destroy(); }
                 catch (Exception e) { e.printStackTrace(); }
@@ -186,6 +186,12 @@ public class PoisonedWineVis {
     }
     // -----------------------------------------
     public static void main(String[] args) {
+        if(args.length > 0) {
+            String seed = args[0];
+            PoisonedWineVis f = new PoisonedWineVis(seed);
+            System.out.println(f.testScore);
+            return;
+        }
 //        String seed = "1";
 //        for (int i = 0; i<args.length; i++)
 //        {   if (args[i].equals("-seed"))
