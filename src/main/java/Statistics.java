@@ -11,7 +11,6 @@ public class Statistics {
      * PoisonedWineに関する統計をとるためのもの
      */
     void statistics() {
-        setWriter(System.getenv("DATA_PATH") + "statistics/bestwid.csv");
         statBestWidthChange();
     }
 
@@ -29,16 +28,17 @@ public class Statistics {
      */
     void statBestWidthChange() {
         for(int poison = 1; poison <= 20; poison++) {
+            setWriter(System.getenv("DATA_PATH")
+                    + String.format("statistics/bestwid_%2d.csv", poison));
             PoisonedWine pw = new PoisonedWine();
             pw.P = poison;
-            pw.W = 1000; // Wの初期値によっても変わる?最適値には関係ない気も
+            pw.W = 2000; // Wの初期値によっても変わる?最適値には関係ない気も
             pw.S = 20;
             pw.R = 10;
             pw.initWidProb();
             System.out.println("Starting poison: " + poison);
             for (int wine = 50; wine <= pw.W; wine++) {
-                if(poison > wine / 50) continue;
-                if(wine % 100 == 0) System.out.println("wine: " + wine);
+                if(wine % 10 == 0) System.out.println("wine: " + wine);
                 for(int strip = 1; strip <= pw.S; strip++) {
                     for(int round = 1; round <= pw.R; round++) {
                         int wid = pw.estimateBestWidth(wine, strip, round);
@@ -49,6 +49,7 @@ public class Statistics {
                     }
                 }
             }
+            out.close();
         }
     }
 
