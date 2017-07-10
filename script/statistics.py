@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 data_path = '../data/'
 file_name = 'result.csv'
 
-def histogram(x, bins, xlim=None):
+def histogram(x, bins, xlim=None, save_path=None):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
 
@@ -19,7 +19,10 @@ def histogram(x, bins, xlim=None):
     if xlim:
         ax.set_xlim(xlim)
 
-    plt.show()
+    if save_path:
+        plt.savefig(save_path)
+    else:
+        plt.show()
 
 
 def stat_poison_dist():
@@ -63,40 +66,42 @@ def load(_file_name):
     return x
 
 
-def stat_point_dist():
+def stat_point_dist(_file_name):
     """
     得点分布を計算
     """
-    x = load(file_name)
+    x = load(_file_name)
 
     x = np.array(x)
     print('mean', np.mean(x))
     print('med', np.median(x))
     print('mean < x', len(x[x > np.mean(x)]))
 
-    histogram(x, 500, xlim=(0, 0.2))
+    histogram(x, 500, save_path=(_file_name + '_out.png'))#, xlim=(0, 0.2))
 
 
-def stat_point_weight():
+def stat_point_weight(_file_name=file_name, save_path=None):
     """
     得点の累積和グラフ
     全体の得点に対して，何点くらいのケースが鍵になってるのか知りたかった
     """
-    x = [0] + load(file_name)
+    x = [0] + load(_file_name)
     y = sorted(x)
     x = sorted(x)
     for i in range(1, len(y)):
         y[i] += y[i - 1]
     plt.plot(x, y)
 
-    x = [0] + load_max_2()
-    y = sorted(x)
-    x = sorted(x)
-    for i in range(1, len(y)):
-        y[i] += y[i - 1]
-    plt.plot(x, y)
+    # x = [0] + load_max_2()
+    # y = sorted(x)
+    # x = sorted(x)
+    # for i in range(1, len(y)):
+    #     y[i] += y[i - 1]
+    # plt.plot(x, y)
+    if save_path:
+        plt.savefig(save_path)
     plt.show()
 
 
 if __name__ == '__main__':
-    stat_point_weight()
+    stat_point_weight(data_path + 'result_dp.csv', 'weight_0710.png')
