@@ -3,6 +3,8 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.*;
 
+// --- cut start ---
+
 class BR {
     public static BufferedReader br;
     public static int readInt() {
@@ -35,6 +37,8 @@ class PoisonTest {
     }
 }
 
+// --- cut end ---
+
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
     static int randSeed = 0;
@@ -63,19 +67,24 @@ public class PoisonedWine {
         P = numPoison;
         S = testStrips;
         R = testRounds;
+        // --- cut start ---
         System.out.println("val: " + ((long)W * S * R * R * P / 1000));
+        // --- cut end ---
         double reg = -1; // 重回帰分析結果(初手のみ)
         initWidProb();
         int[] bottle = new int[numBottles];
         for(int i = 0; i < numBottles; i++) {
             bottle[i] = i;
         }
+//        long timesec = System.currentTimeMillis();
         shuffle(bottle);
         for(int test = 0; test < testRounds && testStrips > 0 && numBottles > P; test++) {
             if(P == 1 && (numBottles < (1 << testStrips) || testRounds - test == 1)) {
                 // 1発でワインを求められるケース
                 // 毒の偏りを利用して，もう少し他のケースでもfind oneできる場合を探す TODO
+                // --- cut start ---
                 System.out.println("find one!");
+                // --- cut end ---
                 numBottles = findOnePoison(bottle, numBottles, numBottles, testStrips);
                 continue;
             }
@@ -84,16 +93,20 @@ public class PoisonedWine {
             curW = numBottles;
             int n;
             if((VAL < 5000 || P < 10) && !(numBottles > 1000 && testRounds - test >= 3 && P >= 18 && testStrips >= 3)) {
+                // --- cut start ---
                 long time = -1;
                 if(estCache.isEmpty()) time = System.currentTimeMillis();
                 if(numPoison >= 15 && testRounds - test > 1 && numBottles > 1000)
                     System.out.printf("begin w:%d t:%d p:%d s:%d\n",
                             numBottles, testRounds - test, numPoison, testStrips);
+                // --- cut end ---
                 n = estimateBestWidth(numBottles, testStrips, testRounds - test);
+                // --- cut start ---
                 if(time >= 0) time = System.currentTimeMillis() - time;
                 System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f) time:%d\n",
                         numBottles, numPoison, testStrips, n,
                         testRounds - test, probNoPoison(numBottles, numPoison, n), time);
+                // --- cut end ---
             } else {
                 // 重回帰分析結果(ただし線形結合よりいい立式を考えた方がいい)
                 double prob = BASE
@@ -101,7 +114,7 @@ public class PoisonedWine {
                         + POIS_COEF * P
                         + ROUD_COEF * (testRounds - test)
                         + STRP_COEF * testStrips;
-                if(prob >= 100) prob = 99;
+                if(prob >= 90) prob = 90;
                 if(reg < 0) reg = prob;
                 n = searchWidByProb(numBottles, numPoison, (int)Math.round(prob));
             }
@@ -137,11 +150,15 @@ public class PoisonedWine {
         for (int i = 0; i < numBottles; ++i)
             ret[i] = bottle[i];
         int saved = W - numBottles;
+
+        // --- cut start ---
         if(est >= 0)
             System.out.printf("est:%.20f real:%d diff:%.20f diff/acc:%.20f \n",
                 est, saved, est - saved, (est - saved) / (W - P));
         System.out.printf("end seed:%d reg:%f cacheEst:%d cacheDeath:%d\n",
                 PoisonedWineVis.seedL, reg, estCache.size(), deathCache.size());
+        // --- cut end ---
+//        System.err.println("time: " + (System.currentTimeMillis() - timesec));
         return ret;
     }
 
@@ -192,8 +209,6 @@ public class PoisonedWine {
         if(strip == 0) return 1;
         int left = Math.max(1, widProb[wine][80]);
         int right = Math.max(widProb[wine][30], left);
-//        System.out.printf("wid range: %d - %d (%d)\n",
-//                left, right, right - left);
         int wid = left;
         double expMax = 0;
         while(left <= right) {
@@ -208,10 +223,12 @@ public class PoisonedWine {
                 right = wid2 - 1;
                 wid = wid1;
             }
+            // --- cut start ---
             if(round >= 2 && wine > 1000 && P > 8)
                 System.out.printf("wid1:%d exp1:%f wid2:%d exp2:%f\n",
                         wid1, exp1, wid2, exp2);
             expMax = Math.max(exp1, exp2);
+            // --- cut end ---
         }
         if(est < 0) est = expMax;
         return wid;
@@ -274,7 +291,7 @@ public class PoisonedWine {
         dp[0][P][0] = 1;
         for(int i = 0; i < strip; i++) {
             final int wineRem = wine - i * wid;
-            for(int j = 0; j <= P; j++) {
+            for(int j = 0; j <= P && j <= wineRem; j++) {
                 for(int l = 0; l <= Math.min(j, wid); l++) {
                     probCache[l] = prob(wineRem, j, wid, l);
                 }
@@ -374,7 +391,7 @@ public class PoisonedWine {
      */
     double prob(int wine, int poison, int wid, int hit) {
         // このif文も消したい
-        if(comb[wid][hit] == null || comb[wine-wid][poison-hit] == null || comb[wine][poison] == null)
+        if(comb[wine-wid][poison-hit] == null)
             return 0;
 //        final long id = (long) wine * W * P * P
 //                + (long) poison * W * P
@@ -419,11 +436,13 @@ public class PoisonedWine {
     }
 
     public PoisonedWine() {
+        // --- cut start ---
         PoisonTest.vis = null;
+        // --- cut end ---
         init();
     }
     // ---8<------- end of solution submitted to the website -------8<-------
-
+    // --- cut start ---
     public void testProb() {
         // 幅nで死なない確率
         // 50%未満の幅は得策ではないため，その枝刈りに使う予定
@@ -491,4 +510,5 @@ public class PoisonedWine {
     }
     catch (Exception e) {}
     }
+    // --- cut end ---
 }
