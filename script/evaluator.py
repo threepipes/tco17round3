@@ -17,7 +17,8 @@ eval_file = eval_dir + 'tmp.jar' # jar前提
 evaled_dir = working_dir + 'eval/'
 result_dir = working_dir + 'result/'
 
-CASE_NUM = 250
+# パラメータ等を外部から設定できるようにしたい TODO
+CASE_NUM = 2000
 
 def init():
     for d in [submit_dir, eval_dir, evaled_dir, result_dir]:
