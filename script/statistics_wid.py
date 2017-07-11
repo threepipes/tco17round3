@@ -38,6 +38,7 @@ def plot_strip_wid_rel(y_align, poison=8, wine=681, ylim=None, path_dir='../data
     roundごとに(strip, wid)を頂点とした折れ線グラフを描く
     """
 
+    print('plot poison:%d wine:%d' % (poison, wine))
     csv_data_list = load_ondemand(
         '../data/bestwid_%2d.csv' % poison,
         poison=poison, wine=wine)
@@ -64,16 +65,54 @@ def plot_strip_wid_rel(y_align, poison=8, wine=681, ylim=None, path_dir='../data
             y.append(row[y_align])
         ax.plot(x, y, color=color)
 
+    x_l = np.arange(1, 21, 1)
+    y_l = 1 - poison / (x_l + (poison - 1) * 0.57)# * (1 - poison * 0.02)
+    ax.plot(x_l, y_l, color=(1, 0, 0))
+
     plt.savefig(path_dir + 'widfig_%s_w%04d_p%02d.png' % (y_align, wine, poison))
     plt.close()
 
 
-if __name__ == '__main__':
+def stat_strip_wid_rel(y_align, poison=8, wine=681):
+    """
+    """
+
+    csv_data_list = load_ondemand(
+        '../data/bestwid_%2d.csv' % poison,
+        poison=poison, wine=wine)
+    data = [[] for _ in range(10)]
+    for row in csv_data_list:
+        data[row['round'] - 1].append(row)
+
+    print('poison:%d wine:%d' % (poison, wine))
+    for i in range(10):
+        # print('round:%d' % (i + 1))
+        for row in data[i]:
+            x = row['strip']
+            y = row[y_align]
+            if i + 1 == 10:
+                print('strip:%d prob:%f' % (x, 1 - y))
+                # x1yp = x * (1 - y) / poison
+                # print(str(x) + ': x*(1-y)/p=' + str(x1yp))
+                # print(str(x) + 'x*(1-y)/p - (1 - 0.02p)=' + str(x1yp - (1 - 0.02 * poison)))
+
+
+def plot_about_wid():
     # poison = 8
     for wine in range(1000, 2100, 1000):
         for poison in range(1, 20, 1):
-            path_dir = '../data/plot/bestwid_w%04d/' % wine
+            path_dir = '../data/plot_apx_readj/bestwid_w%04d/' % wine
             if not os.path.exists(path_dir):
                 os.makedirs(path_dir)
             # plot_strip_wid_rel('wid', poison=poison, wine=wine, path_dir=path_dir)
             plot_strip_wid_rel('prob', poison=poison, wine=wine, ylim=(0, 1), path_dir=path_dir)
+
+
+def stat_about_wid():
+    wine = 2000
+    for poison in range(1, 21, 1):
+        stat_strip_wid_rel('prob', poison=poison, wine=wine)
+
+
+if __name__ == '__main__':
+    stat_about_wid()
