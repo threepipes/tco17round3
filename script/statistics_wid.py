@@ -3,6 +3,7 @@ bestwidから統計をとるスクリプト
 """
 import os
 from matplotlib import pyplot as plt
+import numpy as np
 
 
 def match_row(info, rows):
@@ -31,7 +32,7 @@ def load_ondemand(path, poison=None, wine=None, strip=None, test_round=None):
     return result
 
 
-def plot_strip_wid_rel(y_align, poison=8, wine=681, path_dir='../data/plot/'):
+def plot_strip_wid_rel(y_align, poison=8, wine=681, ylim=None, path_dir='../data/plot/'):
     """
     poison, wineを固定したとき，
     roundごとに(strip, wid)を頂点とした折れ線グラフを描く
@@ -44,10 +45,15 @@ def plot_strip_wid_rel(y_align, poison=8, wine=681, path_dir='../data/plot/'):
     for row in csv_data_list:
         data[row['round'] - 1].append(row)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111)
     ax.set_xlabel('strip')
     ax.set_ylabel(y_align)
+    plt.xticks(np.arange(1, 21, 1))
+    plt.grid()
+    if ylim:
+        plt.yticks(np.arange(ylim[0], ylim[1], (ylim[1] - ylim[0]) / 10))
+        plt.ylim(ylim)
 
     for i in range(10):
         color = (0, 0, i * 0.1)
@@ -64,10 +70,10 @@ def plot_strip_wid_rel(y_align, poison=8, wine=681, path_dir='../data/plot/'):
 
 if __name__ == '__main__':
     # poison = 8
-    for wine in range(200, 2100, 200):
+    for wine in range(1000, 2100, 1000):
         for poison in range(1, 20, 1):
             path_dir = '../data/plot/bestwid_w%04d/' % wine
             if not os.path.exists(path_dir):
                 os.makedirs(path_dir)
-            plot_strip_wid_rel('wid', poison=poison, wine=wine, path_dir=path_dir)
-            plot_strip_wid_rel('prob', poison=poison, wine=wine, path_dir=path_dir)
+            # plot_strip_wid_rel('wid', poison=poison, wine=wine, path_dir=path_dir)
+            plot_strip_wid_rel('prob', poison=poison, wine=wine, ylim=(0, 1), path_dir=path_dir)
