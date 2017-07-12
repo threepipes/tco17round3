@@ -67,6 +67,7 @@ public class PoisonedWine {
         R = testRounds;
         // --- cut start ---
         System.out.println("val: " + ((long)W * S * R * R * P / 1000));
+        System.out.println("estimate calc time: " + (S * S * W * P * P));
         // --- cut end ---
         double reg = -1; // 重回帰分析結果(初手のみ)
         initWidProb();
@@ -82,6 +83,7 @@ public class PoisonedWine {
                 // 毒の偏りを利用して，もう少し他のケースでもfind oneできる場合を探す TODO
                 // --- cut start ---
                 System.out.println("find one!");
+                System.out.println("estimate calc time: " + (S * S * W * P * P));
                 // --- cut end ---
                 numBottles = findOnePoison(bottle, numBottles, numBottles, testStrips);
                 continue;
@@ -97,8 +99,14 @@ public class PoisonedWine {
                 if(numPoison >= 15 && testRounds - test > 1 && numBottles > 1000)
                     System.out.printf("begin w:%d t:%d p:%d s:%d\n",
                             numBottles, testRounds - test, numPoison, testStrips);
+//                System.out.println("estimate calc time: " + (S * W * P * P));
                 // --- cut end ---
+//                if(numBottles > 200) {
+//                    double width = estimateBestWidthCont(testStrips, testRounds - test);
+//                    n = (int) (width * W);
+//                } else {
                 n = estimateBestWidth(numBottles, testStrips, testRounds - test);
+//                }
                 // --- cut start ---
                 if(time >= 0) time = System.currentTimeMillis() - time;
                 System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f) time:%d\n",
@@ -153,6 +161,7 @@ public class PoisonedWine {
         if(est >= 0)
             System.out.printf("est:%.20f real:%d diff:%.20f diff/acc:%.20f \n",
                 est, saved, est - saved, (est - saved) / (W - P));
+        System.out.println("saved: " + saved);
         System.out.printf("end seed:%d reg:%f cacheEst:%d cacheDeath:%d\n",
                 PoisonedWineVis.seedL, reg, estCache.size(), deathCache.size());
         // --- cut end ---
@@ -222,7 +231,7 @@ public class PoisonedWine {
                 wid = wid1;
             }
             // --- cut start ---
-            if(round >= 2 && wine > 1000 && P > 8)
+//            if(round >= 2 && wine > 1000 && P > 8)
                 System.out.printf("wid1:%d exp1:%f wid2:%d exp2:%f\n",
                         wid1, exp1, wid2, exp2);
             expMax = Math.max(exp1, exp2);
@@ -234,7 +243,7 @@ public class PoisonedWine {
 
     HashMap<Long, Double> estCache = new HashMap<>();
     double estDfs(int wine, int strip, int round, int wid) {
-        if(round == 0 || wine == P || strip == 0) return W - wine;
+        if(round == 0 || wine <= P || strip == 0) return W - wine;
         final long id = (long) wine * W * S * R + (long) strip * W * R
                 + round * W + wid;
         if(estCache.containsKey(id)) return estCache.get(id);
@@ -251,6 +260,7 @@ public class PoisonedWine {
                 continue;
             }
             double maxStrategy = 0;
+            int maxWid = 0;
             int left = Math.max(1, widProb[wine][80]);
             int right = Math.max(Math.min(widProb[wine][30], wine / wid), left);
             while(left <= right) {
@@ -261,11 +271,17 @@ public class PoisonedWine {
                 if(exp1 < exp2) {
                     left = wid1 + 1;
                     maxStrategy = exp2;
+                    maxWid = wid2;
                 } else {
                     right = wid2 - 1;
                     maxStrategy = exp1;
+                    maxWid = wid1;
                 }
+//                System.out.printf("wid1:%d exp1:%f wid2:%d exp2:%f\n",
+//                        wid1, exp1, wid2, exp2);
             }
+//            System.out.printf("D death %d -> exp: %f (maxst: %f) maxWid:%d\n",
+//                    death, probOcc * maxStrategy, maxStrategy, maxWid);
             res += probOcc * maxStrategy;
         }
         estCache.put(id, res);
@@ -312,6 +328,156 @@ public class PoisonedWine {
         }
         deathCache.put(id, res);
         return res;
+    }
+
+    double estimateBestWidthCont(int strip, int round) {
+        /*
+        O(strip * poison ^ 2 * wine)
+         */
+        double bestWid = 0;
+        double bestExp = 0;
+        double left = 0;
+        double right = 1.0 / strip;
+        for(int i = 0; i < 20; i++) {
+            double wid1 = (left * 2 + right) / 3;
+            double wid2 = (left + right * 2) / 3;
+            double exp1 = estDfsCont(strip, round, wid1);
+            double exp2 = estDfsCont(strip, round, wid2);
+            if(exp1 < exp2) {
+                left = wid1;
+                bestWid = wid2;
+                bestExp = exp2;
+            } else {
+                right = wid2;
+                bestWid = wid1;
+                bestExp = exp1;
+            }
+            if((int) (wid1 * W) == (int) (wid2 * W)) break;
+            System.out.printf("wid1:%f exp1:%f wid2:%f exp2:%f\n",
+                    wid1 * W, exp1 * W, wid2 * W, exp2 * W);
+        }
+        est = bestExp * W;
+        return bestWid;
+    }
+
+    double estDfsCont(int strip, int round, double wid) {
+        if(wid < 1e-9) return 0;
+        double res = 0;
+        final int useStrips = Math.min(strip, (int)(1 / wid));
+        final int saveStrips = strip - useStrips;
+        for(int death = 0; death <= useStrips && death <= P; death++) {
+            final double probOcc = probDeathCont(wid, useStrips, death);
+            //calcDeathCont(wid)[useStrips][death];
+            if(probOcc < 1e-8) continue;
+            final int s0 = useStrips - death;
+            final int nextStrips = s0 + saveStrips;
+            final double NEXT_WINE = 1 - s0 * wid;
+            if(round == 1 || nextStrips == 0) {
+                res += probOcc * s0 * wid;
+                continue;
+            }
+            double maxStrategy = 0;
+            double maxWid = 0;
+            double left = 0;
+            double right = 1.0 / nextStrips;
+            for(int i = 0; i < 20; i++) {
+                double wid1 = (left * 2 + right) / 3;
+                double wid2 = (left + right * 2) / 3;
+                double exp1 = estDfsCont(nextStrips, round - 1, wid1);
+                double exp2 = estDfsCont(nextStrips, round - 1, wid2);
+                if(exp1 < exp2) {
+                    left = wid1;
+                    maxStrategy = exp2;
+                    maxWid = wid2;
+                } else {
+                    right = wid2;
+                    maxStrategy = exp1;
+                    maxWid = wid1;
+                }
+//                System.out.printf("C wid1:%f exp1:%f wid2:%f exp2:%f\n",
+//                        wid1 * NEXT_WINE * W, exp1, wid2 * W * NEXT_WINE, exp2);
+            }
+//            System.out.printf("C death %d -> exp: %f (maxst: %f) maxWid:%f\n",
+//                    death, probOcc * (maxStrategy * NEXT_WINE + s0 * wid) * W, maxStrategy * W,
+//                    maxWid * NEXT_WINE * W);
+            res += probOcc * (maxStrategy * NEXT_WINE + s0 * wid);
+        }
+        return res;
+    }
+
+    double probDeathCont(double wid, int useStrips, int death) {
+        if(deathCont == null) initDeathCont();
+        int id = Arrays.binarySearch(widTable, wid);
+        if(id < 0) id = -id - 1;
+        if(id >= widTable.length) id--;
+        try {
+            return deathCont[id][useStrips][death];
+        }catch (ArrayIndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    double[][] calcDeathCont(double wid) {
+        assert 0 < wid && wid <= 1;
+        /*
+        幅や毒の存在位置を連続値として考えるときのcalcDeath
+        内容はほぼ同じ
+        wid:(0, 1]の実数
+         O(strip ^ 2 * poison ^ 2)
+         毒同士が衝突する確率が十分少ないとき，
+         こちらでもほぼ正しい値が出てる
+         widについて，1/wine刻みで前計算できればまあまあ使える
+         strip:10, poison:40, wine:1000 -> 160000000なので厳しいか
+         どちらかというと解析用
+         */
+        final int strip = Math.min(S, (int)(1 / wid + 0.5));
+        int deathMax = Math.min(P, strip);
+        double[][][] dp = new double[strip + 1][P + 1][deathMax + 1];
+        dp[0][P][0] = 1;
+        for(int i = 0; i < strip; i++) {
+            final double widAllRem = 1 - i * wid;
+            for(int j = 0; j <= P; j++) {
+                for(int l = 0; l <= j; l++) {
+                    probCache[l] = probCont(j, wid / widAllRem, l);
+                }
+                for(int k = 0; k <= deathMax; k++) {
+                    if(dp[i][j][k] == 0) continue;
+                    dp[i + 1][j][k] += probCache[0] * dp[i][j][k];
+                    for(int l = 1; l <= j; l++) {
+                        dp[i + 1][j - l][k + 1] += probCache[l] * dp[i][j][k];
+                    }
+                }
+            }
+        }
+        double[][] res = new double[strip + 1][strip + 1];
+        for(int s = 1; s <= strip; s++) {
+            for(int d = 0; d <= s; d++) {
+                for(int p = 0; p <= P; p++) {
+                    res[s][d] += d > P ? 0 : dp[s][p][d];
+                }
+            }
+        }
+        return res;
+    }
+
+    double[][][] deathCont;
+    double[] widTable;
+    void initDeathCont() {
+        // --- cut start ---
+        System.out.println("start init deathcont");
+        // --- cut end ---
+        double[][][] map = new double[W][][];
+        widTable = new double[W];
+        for(int i = 1; i <= W; i++) {
+            double wid = (double) i / W;
+            widTable[i - 1] = wid;
+            map[i - 1] = calcDeathCont(wid);
+        }
+        deathCont = map;
+        // --- cut start ---
+        System.out.println("fin init deathcont");
+        // --- cut end ---
     }
 
     /**
@@ -399,6 +565,12 @@ public class PoisonedWine {
                 .divide(comb[wine][poison], MathContext.DECIMAL32).doubleValue();
 //        probCombCache.put(id, res);
 //        return res;
+    }
+
+    double probCont(int poison, double wid, int hit) {
+        return BigDecimal.valueOf(wid).pow(hit, MathContext.DECIMAL32)
+                .multiply(BigDecimal.valueOf(1 - wid).pow(poison - hit, MathContext.DECIMAL32))
+                .multiply(comb[poison][hit], MathContext.DECIMAL32).doubleValue();
     }
 
     void init() {
