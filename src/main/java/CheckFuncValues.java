@@ -38,13 +38,14 @@ public class CheckFuncValues {
         Random rand = new Random(10);
         for(int test = 0; test < 1; test++) {
             PoisonedWine pw = new PoisonedWine();
-            int wine = 200;
-            int strip = rand.nextInt(5) + 1;
-            int poison = rand.nextInt(5) + 1;
+            int wine = 1105;
+            int strip = 3;//rand.nextInt(5) + 1;
+            int poison = 7;//rand.nextInt(5) + 1;
             int round = 2;
             pw.S = strip;
             pw.P = poison;
             pw.W = wine;
+            pw.R = round;
             pw.initWidProb();
             System.out.println("test " + test + " begin");
             System.out.printf("s:%d p:%d\n",

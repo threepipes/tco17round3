@@ -73,17 +73,24 @@ public class PoisonedWineTest {
         22, 37, 43
     };
 
+    int[] lightWeight = {
+            104, 265, 590
+    };
+
     @Test
     public void testSeed() {
         double sum = 0;
-        int testcase = zeroCase.length;
+        int testcase = 1;
         for(int i = 0; i < testcase; i++) {
             PoisonedWine.randSeed = i + 1;
-            PoisonedWineVis f = new PoisonedWineVis("" + zeroCase[i]);
+            PoisonedWineVis f = new PoisonedWineVis("90");
             sum += f.testScore;
+            System.out.println("test: " + i + " score: " + f.testScore);
+            System.out.println("now: " + (sum / (i + 1)));
         }
         System.out.println("Result: " + (sum / testcase));
     }
+
 
 //    @Test
 //    public void testCalcDeath() {
