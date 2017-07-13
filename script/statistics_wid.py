@@ -32,6 +32,51 @@ def load_ondemand(path, poison=None, wine=None, strip=None, test_round=None):
     return result
 
 
+def plot_poison_wid_rel(y_align, strip=8, wine=2000, ylim=None, path_dir='../data/plot/'):
+    """
+    poison, wineを固定したとき，
+    roundごとに(strip, wid)を頂点とした折れ線グラフを描く
+    """
+
+    print('plot strip:%d wine:%d' % (strip, wine))
+    csv_data_list = load_ondemand(
+        '../data/bestwid_poison_%2d.csv' % strip,
+        strip=strip, wine=wine)
+    data = [[] for _ in range(10)]
+    for row in csv_data_list:
+        data[row['round'] - 1].append(row)
+
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111)
+    ax.set_xlabel('poison')
+    ax.set_ylabel(y_align)
+    plt.xticks(np.arange(1, 21, 1))
+    plt.grid()
+    if ylim:
+        plt.yticks(np.arange(ylim[0], ylim[1], (ylim[1] - ylim[0]) / 10))
+        plt.ylim(ylim)
+
+    for i in range(10):
+        color = (0, 0, i * 0.1)
+        x = []
+        y = []
+        for row in data[i]:
+            x.append(row['poison'])
+            y.append(row[y_align])
+        ax.plot(x, y, color=color)
+
+    plt.savefig(path_dir + 'poison_widfig_%s_w%04d_s%02d.png' % (y_align, wine, strip))
+    plt.close()
+
+
+def plot_poison_wid():
+    path_dir = '../data/plot_poison_wid/'
+    if not os.path.exists(path_dir):
+        os.makedirs(path_dir)
+    for strip in range(1, 21, 1):
+        plot_poison_wid_rel('prob', strip=strip, ylim=(0, 1), path_dir=path_dir)
+
+
 def plot_strip_wid_rel(y_align, poison=8, wine=681, ylim=None, path_dir='../data/plot/'):
     """
     poison, wineを固定したとき，
@@ -115,4 +160,4 @@ def stat_about_wid():
 
 
 if __name__ == '__main__':
-    stat_about_wid()
+    plot_poison_wid()

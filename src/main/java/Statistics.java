@@ -27,28 +27,28 @@ public class Statistics {
      * ベスト幅はどのように変化するかの統計をとる
      */
     void statBestWidthChange() {
-        for(int poison = 1; poison <= 20; poison++) {
-            setWriter(System.getenv("DATA_PATH")
-                    + String.format("statistics/bestwid_%2d.csv", poison));
+        setWriter(System.getenv("DATA_PATH")
+                + String.format("statistics/bestwid_poison.csv"));
+        for(int poison = 1; poison <= 100; poison++) {
             PoisonedWine pw = new PoisonedWine();
+            int wine = 2000;
             pw.P = poison;
-            pw.W = 2000; // Wの初期値によっても変わる?最適値には関係ない気も
+            pw.W = wine;
             pw.S = 20;
             pw.R = 10;
             pw.initWidProb();
             System.out.println("Starting poison: " + poison);
-            for (int wine = 50; wine <= pw.W; wine++) {
-                if(wine % 10 == 0) System.out.println("wine: " + wine);
-                for(int strip = 1; strip <= pw.S; strip++) {
-                    for(int round = 1; round <= pw.R; round++) {
-                        int wid = pw.estimateBestWidth(wine, strip, round);
-                        double alive = pw.probNoPoison(wine, poison, wid);
-                        String log = String.format("%d,%d,%d,%d,%d,%f",
-                                poison, wine, strip, round, wid, alive);
-                        out.println(log);
-                    }
+            long time = System.currentTimeMillis();
+            for(int strip = 1; strip <= pw.S; strip++) {
+                for(int round = 1; round <= pw.R; round++) {
+                    int wid = pw.estimateBestWidth(wine, strip, round);
+                    double alive = pw.probNoPoison(wine, poison, wid);
+                    String log = String.format("%d,%d,%d,%d,%f",
+                            poison, strip, round, wid, alive);
+                    out.println(log);
                 }
             }
+            System.out.println("time: " + (System.currentTimeMillis() - time));
             out.close();
         }
     }
