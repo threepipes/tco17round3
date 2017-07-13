@@ -1,6 +1,9 @@
 import java.io.*;
 import java.security.*;
+import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class PoisonedWineVis {
@@ -76,13 +79,15 @@ public class PoisonedWineVis {
     TestInfo testCase;
     long time;
     static long seedL;
+    PoisonedWine pw;
     public double runTest(String seed) {
         try {
             seedL = Long.parseLong(seed);
             generateTestCase(seedL);
             testCase = new TestInfo(seedL, numBottles, testStrips, testRounds, numPoison);
             time = System.currentTimeMillis();
-            int[] ret = new PoisonedWine(this).testWine(numBottles, testStrips, testRounds, numPoison);
+            pw = new PoisonedWine(this);
+            int[] ret = pw.testWine(numBottles, testStrips, testRounds, numPoison);
             time = System.currentTimeMillis() - time;
             if (failure) {
                 return 0;
@@ -190,6 +195,7 @@ public class PoisonedWineVis {
             String seed = args[0];
             PoisonedWineVis f = new PoisonedWineVis(seed);
             System.out.println(f.testScore);
+            f.writeLog();
             return;
         }
 //        String seed = "1";
@@ -235,6 +241,16 @@ public class PoisonedWineVis {
     }
     void addFatalError(String message) {
         System.out.println(message);
+    }
+    void writeLog() {
+        StringBuilder sb = pw.logger;
+        System.err.print(sb.toString());
+//        File file = new File(System.getenv("DATA_PATH") + "/tco17_3/log/" + filename);
+//        try(BufferedWriter out = new BufferedWriter(new FileWriter(file))) {
+//            out.write(sb.toString());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 }
 

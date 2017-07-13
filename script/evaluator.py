@@ -16,6 +16,7 @@ eval_dir = working_dir + 'tmp/'
 eval_file = eval_dir + 'tmp.jar' # jar前提
 evaled_dir = working_dir + 'eval/'
 result_dir = working_dir + 'result/'
+log_dir = working_dir + 'log/'
 
 # パラメータ等を外部から設定できるようにしたい TODO
 CASE_NUM = 500
@@ -41,13 +42,15 @@ def exec_case(seed):
         result = {
             'seed': seed,
             'score': float(stdout.decode('utf-8').strip()),
-            'time': timesec
+            'time': timesec,
+            'log': stderr.decode('utf-8')
         }
     except TimeoutExpired:
         result = {
             'seed': seed,
             'score': -1.0,
-            'time': 100.0
+            'time': 100.0,
+            'log': str(seed) + ',expired\n'
         }
     return result
 
@@ -61,10 +64,13 @@ def save_result(filename, result):
                 map(str, [row[col] for col in ['seed', 'score', 'time']])
             ) + '\n')
             score += row['score']
+    with open(log_dir + filename, 'w') as f:
+        for row in result:
+            f.write(row['log'])
     average = score / CASE_NUM
 
-    with open(result_dir + 'records.csv', 'a') as f:
-        f.write('"%s",%d\n' % (filename, average))
+    with open(result_dir + 'records_%d.csv' % CASE_NUM, 'a') as f:
+        f.write('"%s",%f\n' % (filename, average))
 
     return average
 

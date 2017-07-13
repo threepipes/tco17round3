@@ -39,6 +39,9 @@ class PoisonTest {
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
+    // --- sub start ---
+    public StringBuilder logger = new StringBuilder();
+    // --- sub end ---
     static int randSeed = 0;
     Random rand = new Random(randSeed);
     void shuffle(int[] a, int len) {
@@ -49,6 +52,30 @@ public class PoisonedWine {
             a[i1] = a[i2];
             a[i2] = tmp;
         }
+    }
+
+    long calcTime1(int w) {
+        return (long) (S * (S + Math.log(w) / Math.log(2)) * w * P * P / 10000);
+    }
+
+    long calcTime2(int w) {
+        return (long)(13L * S * S * R * w * Math.log(w) / Math.log(2) / 300000);
+    }
+
+    int upperWine() {
+        int left = 200;
+        int right = W;
+        int ans = -1;
+        while(left <= right) {
+            int mid = (left + right) / 2;
+            if(calcTime1(mid) + calcTime2(mid) < 60000) {
+                ans = mid;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return ans;
     }
 
     final double BASE = 37.54114071;
@@ -62,6 +89,7 @@ public class PoisonedWine {
     double est = -1;
     int[] rangeLen, rangePoison;
     int rangeN;
+    int maxW;
     public int[] testWine(int numBottles, int testStrips, int testRounds, int numPoison) {
         W = numBottles;
         P = numPoison;
@@ -72,12 +100,18 @@ public class PoisonedWine {
         rangeLen[0] = W;
         rangePoison[0] = P;
         rangeN = 1;
+        maxW = upperWine();
         double log2W = Math.log(W) / Math.log(2);
         long time1 = (long) (S * (S + log2W) * W * P * P / 10000);
         long time2 = (long)(13L * S * S * R * W * log2W / 300000);
+        // --- sub start ---
+        logger.append(String.format("preinfo,%d,%d",
+                PoisonedWineVis.seedL, maxW)).append("\n");
+        // --- sub end ---
         // --- cut start ---
         System.out.println("val: " + ((long)W * (S) * R * R * P / 1000));
         System.out.println("estimate calc time: " + time1 + " + " + time2);
+        System.out.println("upper wine: " + maxW);
         // --- cut end ---
         double reg = -1; // 重回帰分析結果(初手のみ)
         initWidProb();
@@ -86,9 +120,18 @@ public class PoisonedWine {
             bottle[i] = i;
         }
 //        long timesec = System.currentTimeMillis();
-        shuffle(bottle, bottle.length);
+//        shuffle(bottle, bottle.length);
         boolean changeRange = false;
         for(int test = 0; test < testRounds && testStrips > 0 && numBottles > P; test++) {
+            // --- sub start ---
+            double regProb = BASE
+                    + WINE_COEF * numBottles
+                    + POIS_COEF * P
+                    + ROUD_COEF * (testRounds)
+                    + STRP_COEF * testStrips;
+            logger.append(String.format("preinfo,%d,%d",
+                    PoisonedWineVis.seedL, maxW)).append("\n");
+            // --- sub end ---
             if(P == 1 && (numBottles < (1 << testStrips) || testRounds - test == 1)) {
                 // 1発でワインを求められるケース
                 // 毒の偏りを利用して，もう少し他のケースでもfind oneできる場合を探す TODO
@@ -117,13 +160,21 @@ public class PoisonedWine {
 //                } else {
                     n = estimateBestWidth(numBottles, testStrips, testRounds - test);
 //                }
+                // --- sub start ---
+                double pb = probNoPoison(numBottles, numPoison, n);
+                // --- sub end ---
                 // --- cut start ---
                 if(time >= 0) time = System.currentTimeMillis() - time;
-                System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f) time:%d\n",
+                System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f rd:%f) time:%d\n",
                         numBottles, numPoison, testStrips, n,
-                        testRounds - test, probNoPoison(numBottles, numPoison, n), time);
+                        testRounds - test, pb, regProb - pb * 100, time);
                 // --- cut end ---
-            } else if(time1 + time2 < 60000) {
+
+                // --- sub start ---
+                logger.append(String.format("probdiffD,%d,%f,%f,%f",
+                        PoisonedWineVis.seedL, regProb - pb * 100, regProb, pb)).append("\n");
+                // --- sub end ---
+            } else if(maxW > 0) {
                 // --- cut start ---
                 System.out.println("cont begin");
                 // --- cut end ---
@@ -160,13 +211,20 @@ public class PoisonedWine {
                 }
                 rangeN -= maxId;
 //                shuffle(bottle, rangeLen[0]);
+                // --- sub start ---
+                double pb = probNoPoison(numBottles, numPoison, n);
+                // --- sub end ---
                 // --- cut start ---
                 System.out.printf("maxEst:%f maxId:%d sumBottle:%d sumPoison:%d\n",
                         maxEst, maxId, sumBottle, sumPoison, n);
                 System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f)\n",
                         numBottles, numPoison, testStrips, n,
-                        testRounds - test, probNoPoison(numBottles, numPoison, n));
+                        testRounds - test, pb);
                 // --- cut end ---
+                // --- sub start ---
+                logger.append(String.format("probdiffC,%d,%f,%f,%f",
+                        PoisonedWineVis.seedL, regProb - pb * 100, regProb, pb)).append("\n");
+                // --- sub end ---
                 /**/
             } else {
                 // --- cut start ---
@@ -181,6 +239,9 @@ public class PoisonedWine {
                 if(prob >= 90) prob = 90;
                 if(reg < 0) reg = prob;
                 n = searchWidByProb(numBottles, numPoison, (int)Math.round(prob));
+                // --- sub start ---
+                logger.append(String.format("reg,%d,%f,,", PoisonedWineVis.seedL, regProb)).append("\n");
+                // --- sub end ---
             }
             if(n < 0) n = (numBottles + testStrips - 1) / testStrips;
             List<String> tests = new ArrayList<>();
@@ -345,8 +406,8 @@ public class PoisonedWine {
             }
             // --- cut start ---
 //            if(round >= 2 && wine > 1000 && P > 8)
-                System.out.printf("wid1:%d exp1:%f wid2:%d exp2:%f\n",
-                        wid1, exp1, wid2, exp2);
+//                System.out.printf("wid1:%d exp1:%f wid2:%d exp2:%f\n",
+//                        wid1, exp1, wid2, exp2);
             expMax = Math.max(exp1, exp2);
             // --- cut end ---
         }
@@ -587,7 +648,6 @@ public class PoisonedWine {
     double[] widTable;
     final int CONT_WINE_MAX = 3000;
     void initDeathCont() {
-        final int maxW = Math.min(3000, W);
         // --- cut start ---
         System.out.println("start init deathcont");
         long time = System.currentTimeMillis();
@@ -606,7 +666,6 @@ public class PoisonedWine {
     }
 
     void initEstDfsCont() {
-        final int maxW = Math.min(3000, W);
         // --- cut start ---
         System.out.println("start init estcont");
         long time = System.currentTimeMillis();
