@@ -10,7 +10,7 @@ public class PoisonedWineVis {
     private int testStrips;
     private int testRounds;
     private int numPoison;
-    private boolean[] bottles;
+    static boolean[] bottles;
 
     private boolean failure = false;
 
@@ -217,7 +217,7 @@ public class PoisonedWineVis {
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, String.format("result_dp_fast_nx_%2d.csv", p));
+            writeTestInfo(testList, String.format("result_dp_cont_%2d.csv", p));
         }
     }
     // -----------------------------------------

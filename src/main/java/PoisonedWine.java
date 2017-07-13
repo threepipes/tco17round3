@@ -41,10 +41,10 @@ class PoisonTest {
 public class PoisonedWine {
     static int randSeed = 0;
     Random rand = new Random(randSeed);
-    void shuffle(int[] a) {
-        for(int i = 0; i < a.length; i++) {
+    void shuffle(int[] a, int len) {
+        for(int i = 0; i < len; i++) {
             int i1 = i;
-            int i2 = rand.nextInt(a.length);
+            int i2 = rand.nextInt(len);
             int tmp = a[i1];
             a[i1] = a[i2];
             a[i2] = tmp;
@@ -60,15 +60,23 @@ public class PoisonedWine {
     int W, P, S, R;
     int curW;
     double est = -1;
+    int[] rangeLen, rangePoison;
+    int rangeN;
     public int[] testWine(int numBottles, int testStrips, int testRounds, int numPoison) {
         W = numBottles;
         P = numPoison;
         S = testStrips;
         R = testRounds;
+        rangeLen = new int[S + 1];
+        rangePoison = new int[S + 1];
+        rangeLen[0] = W;
+        rangePoison[0] = P;
+        rangeN = 1;
+        double log2W = Math.log(W) / Math.log(2);
+        long time1 = (long) (S * (S + log2W) * W * P * P / 10000);
+        long time2 = (long)(13L * S * S * R * W * log2W / 300000);
         // --- cut start ---
-        System.out.println("val: " + ((long)W * S * R * R * P / 1000));
-        long time1 = (S * S * W * P * P / 10000);
-        long time2 = (long)(13 * S * S * R * W * Math.log(W) / Math.log(2) / 300000);
+        System.out.println("val: " + ((long)W * (S) * R * R * P / 1000));
         System.out.println("estimate calc time: " + time1 + " + " + time2);
         // --- cut end ---
         double reg = -1; // 重回帰分析結果(初手のみ)
@@ -78,7 +86,8 @@ public class PoisonedWine {
             bottle[i] = i;
         }
 //        long timesec = System.currentTimeMillis();
-//        shuffle(bottle);
+        shuffle(bottle, bottle.length);
+        boolean changeRange = false;
         for(int test = 0; test < testRounds && testStrips > 0 && numBottles > P; test++) {
             if(P == 1 && (numBottles < (1 << testStrips) || testRounds - test == 1)) {
                 // 1発でワインを求められるケース
@@ -94,20 +103,19 @@ public class PoisonedWine {
                     * (testRounds - test) * P / 1000;
             curW = numBottles;
             int n;
-            if(true || (VAL < 5000 || P < 10) && !(numBottles > 1000 && testRounds - test >= 3 && P >= 18 && testStrips >= 3)) {
+            if((VAL < 5000 || P < 10) && numBottles < 4000 && (numBottles < 1000 || P * (testRounds - test) < 33)) {
                 // --- cut start ---
                 long time = -1;
                 if(estCache.isEmpty()) time = System.currentTimeMillis();
                 if(numPoison >= 15 && testRounds - test > 1 && numBottles > 1000)
-                    System.out.printf("begin w:%d t:%d p:%d s:%d\n",
+                    System.out.printf("dist begin w:%d t:%d p:%d s:%d\n",
                             numBottles, testRounds - test, numPoison, testStrips);
 //                System.out.println("estimate calc time: " + (S * W * P * P));
                 // --- cut end ---
 //                if(numBottles > 200) {
-                    double width = estimateBestWidthCont(testStrips, testRounds - test);
-                    n = (int) (width * numBottles);
+//                n = (int)(estimateBestWidthCont(testStrips, testRounds - test) * curW);
 //                } else {
-//                    n = estimateBestWidth(numBottles, testStrips, testRounds - test);
+                    n = estimateBestWidth(numBottles, testStrips, testRounds - test);
 //                }
                 // --- cut start ---
                 if(time >= 0) time = System.currentTimeMillis() - time;
@@ -115,7 +123,55 @@ public class PoisonedWine {
                         numBottles, numPoison, testStrips, n,
                         testRounds - test, probNoPoison(numBottles, numPoison, n), time);
                 // --- cut end ---
+            } else if(time1 + time2 < 60000) {
+                // --- cut start ---
+                System.out.println("cont begin");
+                // --- cut end ---
+                /**/
+                double maxEst = 0;
+                changeRange = true;
+                int maxId = 0;
+                n = -1;
+                int sumBottle = 0;
+                int sumPoison = 0;
+                for(int i = 0; i < rangeN; i++) {
+                    sumBottle += rangeLen[i];
+                    sumPoison += rangePoison[i];
+                    P = sumPoison;
+                    curW = sumBottle;
+                    double width = estimateBestWidthCont(testStrips, testRounds - test);
+//                    int width = estimateBestWidth(sumBottle, testStrips, testRounds - test);
+                    if(maxEst < preEst) {
+                        maxEst = preEst;
+                        maxId = i;
+                        n = (int) Math.ceil(width * sumBottle);
+                    }
+                }
+                P = numPoison;
+                curW = numBottles;
+                // range[1]～range[id]をrange[0]に統合
+                for(int i = 1; i <= maxId; i++) {
+                    rangeLen[0] += rangeLen[i];
+                    rangePoison[0] += rangePoison[i];
+                }
+                for(int i = maxId + 1; i < rangeN; i++) {
+                    rangeLen[i - maxId] = rangeLen[i];
+                    rangePoison[i - maxId] = rangePoison[i];
+                }
+                rangeN -= maxId;
+//                shuffle(bottle, rangeLen[0]);
+                // --- cut start ---
+                System.out.printf("maxEst:%f maxId:%d sumBottle:%d sumPoison:%d\n",
+                        maxEst, maxId, sumBottle, sumPoison, n);
+                System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f)\n",
+                        numBottles, numPoison, testStrips, n,
+                        testRounds - test, probNoPoison(numBottles, numPoison, n));
+                // --- cut end ---
+                /**/
             } else {
+                // --- cut start ---
+                System.out.println("regression");
+                // --- cut end ---
                 // 重回帰分析結果(ただし線形結合よりいい立式を考えた方がいい)
                 double prob = BASE
                         + WINE_COEF * numBottles
@@ -126,7 +182,7 @@ public class PoisonedWine {
                 if(reg < 0) reg = prob;
                 n = searchWidByProb(numBottles, numPoison, (int)Math.round(prob));
             }
-            if(n == -1) n = (numBottles + testStrips - 1) / testStrips;
+            if(n < 0) n = (numBottles + testStrips - 1) / testStrips;
             List<String> tests = new ArrayList<>();
             for (int i = 0; i < testStrips; ++i) {
                 if(i * n >= numBottles) break;
@@ -135,24 +191,72 @@ public class PoisonedWine {
                     t += "," + bottle[i * n + j];
                 tests.add(t);
             }
+            /*
+             rangeの統合については，上ですでに終わっているものとする TODO
+             -> rangeの先頭が今回のループで考えられた範囲と保証
+              */
             int[] testRes = PoisonTest.useTestStrips(tests.toArray(new String[0]));
             int next = 0;
             int used = 0;
             List<Integer> warning = new ArrayList<>();
-            for (int i = 0; i * n < numBottles; ++i)
+            for (int i = 0; i * n < numBottles; ++i) {
                 if (i >= testRes.length || testRes[i] == 1) {
-                    if(i < testRes.length) {
-                        for (int j = 0; j < n && i * n + j < numBottles; ++j)
+                    if (i < testRes.length) {
+                        // 毒を含む場合
+                        int j;
+                        for (j = 0; j < n && i * n + j < numBottles; ++j)
                             warning.add(bottle[i * n + j]);
+                        if(changeRange) {
+                            rangeLen[0] -= j;
+                            rangePoison[0]--;
+                            rangeLen[rangeN] = j;
+                            rangePoison[rangeN++] = 1;
+                        }
                         used++;
-                    } else for (int j = 0; j < n && i * n + j < numBottles; ++j)
+                    } else for (int j = 0; j < n && i * n + j < numBottles; ++j) {
+                        // 今回考えられていない範囲
                         bottle[next++] = bottle[i * n + j];
+                    }
+                } else if(changeRange) {
+                    // 毒がなかった場合
+                    final int num = Math.min(n, numBottles - i * n);
+                    rangeLen[0] -= num;
                 }
+            }
             // bottleの先頭 n * used は毒密度が高いので後ろに回す
             // 区間ごとに毒密度管理するとか -> たぶん地獄
             for(int w: warning) bottle[next++] = w;
             testStrips -= used;
             numBottles = next;
+            if(rangePoison[0] == 0 && changeRange) {
+                // 先頭範囲の毒が0になった場合
+
+                for(int i = rangeLen[0]; i < numBottles; i++) {
+                    bottle[i - rangeLen[0]] = bottle[i];
+                }
+                numBottles -= rangeLen[0];
+                for(int i = 1; i < rangeN; i++) {
+                    rangeLen[i - 1] = rangeLen[i];
+                    rangePoison[i - 1] = rangePoison[i];
+                }
+                rangeN--;
+            }
+            if(!changeRange) {
+                rangeLen[0] = numBottles;
+                rangePoison[0] = numPoison;
+                rangeN = 1;
+            }
+            // --- cut start ---
+            int pcnt = 0;
+            for(int i = 0; i < numBottles; i++) {
+                if(PoisonedWineVis.bottles[bottle[i]]) pcnt++;
+            }
+            if(pcnt != P) {
+                System.err.println("Wrong!!");
+            }
+            dump(rangeLen, rangeN);
+            dump(rangePoison, rangeN);
+            // --- cut end ---
         }
         int[] ret = new int[numBottles];
         for (int i = 0; i < numBottles; ++i)
@@ -169,6 +273,13 @@ public class PoisonedWine {
         // --- cut end ---
 //        System.err.println("time: " + (System.currentTimeMillis() - timesec));
         return ret;
+    }
+
+    void dump(int[] a, int len) {
+        for(int i = 0; i < len; i++) {
+            System.out.printf("%4d ", a[i]);
+        }
+        System.out.println();
     }
 
     int[][] widProb;
@@ -239,6 +350,7 @@ public class PoisonedWine {
             expMax = Math.max(exp1, exp2);
             // --- cut end ---
         }
+        preEst = expMax;
         if(est < 0) est = expMax;
         return wid;
     }
@@ -332,13 +444,14 @@ public class PoisonedWine {
         return res;
     }
 
+    double preEst = 0;
     double estimateBestWidthCont(int strip, int round) {
         /*
         O(strip * poison ^ 2 * wine)
          */
         double bestWid = 0;
         double bestExp = 0;
-        double left = 0;
+        double left = 1.0 / curW;//Math.max(1.0 / curW, (double) widProb[curW][80] / curW);
         double right = 1.0 / strip;
         for(int i = 0; i < 20; i++) {
             double wid1 = (left * 2 + right) / 3;
@@ -356,10 +469,11 @@ public class PoisonedWine {
             }
             if((int) (wid1 * curW) == (int) (wid2 * curW)) break;
             // --- cut start ---
-            System.out.printf("wid1:%f exp1:%f wid2:%f exp2:%f\n",
-                    wid1 * curW, exp1 * curW, wid2 * curW, exp2 * curW);
+//            System.out.printf("wid1:%f exp1:%f wid2:%f exp2:%f\n",
+//                    wid1 * curW, exp1 * curW, wid2 * curW, exp2 * curW);
             // --- cut end ---
         }
+        preEst = bestExp * curW;
         if(est < 0) est = bestExp * curW;
         return bestWid;
     }
@@ -418,25 +532,6 @@ public class PoisonedWine {
         return estDfsContCache[round][strip][id];
     }
 
-    void initEstDfsCont() {
-        // --- cut start ---
-        System.out.println("start init estcont");
-        long time = System.currentTimeMillis();
-        // --- cut end ---
-        estDfsContCache = new double[R + 1][S + 1][W + 1];
-        for(int round = 1; round <= R; round++) {
-            for(int strip = 1; strip <= S; strip++) {
-                for(int w = 1; w <= W; w++) {
-                    estDfsContCache[round][strip][w]
-                            = estDfsCont(strip, round, (double) w / W);
-                }
-            }
-        }
-        // --- cut start ---
-        System.out.printf("fin init estcont: %dms\n", System.currentTimeMillis() - time);
-        // --- cut end ---
-    }
-
     double probDeathCont(double wid, int useStrips, int death) {
         if(deathCont == null) initDeathCont();
         int id = Arrays.binarySearch(widTable, wid);
@@ -490,21 +585,43 @@ public class PoisonedWine {
 
     double[][][] deathCont;
     double[] widTable;
+    final int CONT_WINE_MAX = 3000;
     void initDeathCont() {
+        final int maxW = Math.min(3000, W);
         // --- cut start ---
         System.out.println("start init deathcont");
         long time = System.currentTimeMillis();
         // --- cut end ---
-        double[][][] map = new double[W][][];
-        widTable = new double[W];
-        for(int i = 1; i <= W; i++) {
-            double wid = (double) i / W;
+        double[][][] map = new double[maxW][][];
+        widTable = new double[maxW];
+        for(int i = 1; i <= maxW; i++) {
+            double wid = (double) i / maxW;
             widTable[i - 1] = wid;
             map[i - 1] = calcDeathCont(wid);
         }
         deathCont = map;
         // --- cut start ---
         System.out.printf("fin init deathcont: %dms\n", System.currentTimeMillis() - time);
+        // --- cut end ---
+    }
+
+    void initEstDfsCont() {
+        final int maxW = Math.min(3000, W);
+        // --- cut start ---
+        System.out.println("start init estcont");
+        long time = System.currentTimeMillis();
+        // --- cut end ---
+        estDfsContCache = new double[R + 1][S + 1][maxW + 1];
+        for(int round = 1; round <= R; round++) {
+            for(int strip = 1; strip <= S; strip++) {
+                for(int w = 1; w <= maxW; w++) {
+                    estDfsContCache[round][strip][w]
+                            = estDfsCont(strip, round, (double) w / maxW);
+                }
+            }
+        }
+        // --- cut start ---
+        System.out.printf("fin init estcont: %dms\n", System.currentTimeMillis() - time);
         // --- cut end ---
     }
 
