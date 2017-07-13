@@ -1,6 +1,8 @@
+import os
 import sys
 import shutil
 import subprocess
+import time
 
 src_path = '../src/main/java/PoisonedWine.java'
 dst_path = '../data/PoisonedWine.java'
@@ -46,9 +48,34 @@ def build_test_jar():
     tmp_path = '../data/tmp'
     shutil.move(src_path, tmp_path)
     shutil.move(dst_path, src_path)
-    subprocess.run(command, cwd='../', shell=True)
+    # subprocess.run(command, cwd='../', shell=True)
+    p = subprocess.Popen(command, cwd='../', shell=True, stdout=subprocess.PIPE)
+    stdout, stderr = p.communicate()
     shutil.move(src_path, dst_path)
     shutil.move(tmp_path, src_path)
+    return 'BUILD SUCCESSFUL' in stdout.decode('utf-8')
+
+
+def copy_jar():
+    jar_dir = '../build/libs/'
+    file_list = os.listdir(jar_dir)
+    if not file_list:
+        return False
+    newest = sorted(
+        file_list,
+        key=lambda f: -os.stat(jar_dir + f).st_mtime
+    )[0]
+    # print('created: %f, time: %f' % (time.time(), os.stat(jar_dir + newest).st_mtime))
+    # diff = time.time() - os.stat(jar_dir + newest).st_mtime
+    # print('diff: %f' % diff)
+    print('copy from %s to %s' % (
+        jar_dir + newest,
+        os.getenv('DATA_PATH') + 'tco17_3/submit/' + newest
+    ))
+    shutil.copy(
+        jar_dir + newest,
+        os.getenv('DATA_PATH') + 'tco17_3/submit/' + newest
+    )
 
 
 if __name__ == '__main__':
@@ -58,6 +85,7 @@ if __name__ == '__main__':
             local = True
 
     if local:
-        build_test_jar()
+        if build_test_jar():
+            copy_jar()
     else:
         create(local)

@@ -18,7 +18,7 @@ evaled_dir = working_dir + 'eval/'
 result_dir = working_dir + 'result/'
 
 # パラメータ等を外部から設定できるようにしたい TODO
-CASE_NUM = 2000
+CASE_NUM = 500
 
 def init():
     for d in [submit_dir, eval_dir, evaled_dir, result_dir]:
@@ -100,7 +100,7 @@ def check_newfile():
         return False
     return sorted(
         file_list,
-        key=lambda f: os.stat(submit_dir + f).st_mtime
+        key=lambda f: -os.stat(submit_dir + f).st_mtime
     )[0]
 
 
