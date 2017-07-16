@@ -63,7 +63,7 @@ public class PoisonedWine {
     }
 
     int upperWine() {
-        int left = 200;
+        int left = Math.min(500, W);
         int right = W;
         int ans = -1;
         while(left <= right) {
@@ -120,9 +120,9 @@ public class PoisonedWine {
             bottle[i] = i;
         }
 //        long timesec = System.currentTimeMillis();
-//        shuffle(bottle, bottle.length);
-        boolean changeRange = false;
+        shuffle(bottle, bottle.length);
         for(int test = 0; test < testRounds && testStrips > 0 && numBottles > P; test++) {
+            boolean changeRange = false;
             // --- sub start ---
             double regProb = BASE
                     + WINE_COEF * numBottles
@@ -230,15 +230,24 @@ public class PoisonedWine {
                 // --- cut start ---
                 System.out.println("regression");
                 // --- cut end ---
-                // 重回帰分析結果(ただし線形結合よりいい立式を考えた方がいい)
-                double prob = BASE
-                        + WINE_COEF * numBottles
-                        + POIS_COEF * P
-                        + ROUD_COEF * (testRounds - test)
-                        + STRP_COEF * testStrips;
-                if(prob >= 90) prob = 90;
-                if(reg < 0) reg = prob;
-                n = searchWidByProb(numBottles, numPoison, (int)Math.round(prob));
+                int round = testRounds - test;
+                double bestWidth = Math.min(
+                        2 * numBottles / ((numPoison - 0.46 * Math.log10(round) * (testStrips - 3)) * (round * 1.1 + 1)),
+                        numBottles / testStrips
+                );
+//                double bestWidth = -1;
+                if(bestWidth < 1) {
+                    // 重回帰分析結果(ただし線形結合よりいい立式を考えた方がいい)
+                    double prob = BASE
+                            + WINE_COEF * numBottles
+                            + POIS_COEF * P
+                            + ROUD_COEF * (testRounds - test)
+                            + STRP_COEF * testStrips;
+                    if (prob >= 90) prob = 90;
+                    if (reg < 0) reg = prob;
+                    bestWidth = searchWidByProb(numBottles, numPoison, (int) Math.round(prob));
+                }
+                n = (int) bestWidth;
                 // --- sub start ---
                 logger.append(String.format("reg,%d,%f,,", PoisonedWineVis.seedL, regProb)).append("\n");
                 // --- sub end ---
@@ -293,7 +302,7 @@ public class PoisonedWine {
                 // 先頭範囲の毒が0になった場合
 
                 for(int i = rangeLen[0]; i < numBottles; i++) {
-                    bottle[i - rangeLen[0]] = bottle[i];
+                    bottle[i - rangeLen[0]] = bottle[i]; // bugあり TODO
                 }
                 numBottles -= rangeLen[0];
                 for(int i = 1; i < rangeN; i++) {
