@@ -39,10 +39,13 @@ class PoisonTest {
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
+    // params
+    final int upperWineLeft = 1000; // param:300,5000,1000
+    final int VAL_MAX = 3000; // param:
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
-    static int randSeed = 0;
+    static int randSeed = 2;
     Random rand = new Random(randSeed);
     void shuffle(int[] a, int len) {
         for(int i = 0; i < len; i++) {
@@ -63,7 +66,7 @@ public class PoisonedWine {
     }
 
     int upperWine() {
-        int left = Math.min(500, W);
+        int left = Math.min(upperWineLeft, W);
         int right = W;
         int ans = -1;
         while(left <= right) {
@@ -109,7 +112,7 @@ public class PoisonedWine {
                 PoisonedWineVis.seedL, maxW)).append("\n");
         // --- sub end ---
         // --- cut start ---
-        System.out.println("val: " + ((long)W * (S) * R * R * P / 1000));
+        System.out.println("val: " + ((long)W * S * R * R * P / 1000));
         System.out.println("estimate calc time: " + time1 + " + " + time2);
         System.out.println("upper wine: " + maxW);
         // --- cut end ---
@@ -146,7 +149,8 @@ public class PoisonedWine {
                     * (testRounds - test) * P / 1000;
             curW = numBottles;
             int n;
-            if((VAL < 5000 || P < 10) && numBottles < 4000 && (numBottles < 1000 || P * (testRounds - test) < 33)) {
+            if(VAL < VAL_MAX) {
+                    //(VAL < 5000 || P < 10) && numBottles < 4000 && (numBottles < 1000 || P * (testRounds - test) < 33)) {
                 // --- cut start ---
                 long time = -1;
                 if(estCache.isEmpty()) time = System.currentTimeMillis();
