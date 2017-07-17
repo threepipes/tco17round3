@@ -40,8 +40,9 @@ class PoisonTest {
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
     // params
-    final int upperWineLeft = 1000; // param:300,5000,1000
-    final int VAL_MAX = 3000; // param:
+    final int upperWineLeft = 500; // param:300,5000,1000
+    final int VAL_MAX = 1000; // param:
+    final double WID_COEF = 1.05;
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
@@ -71,7 +72,7 @@ public class PoisonedWine {
         int ans = -1;
         while(left <= right) {
             int mid = (left + right) / 2;
-            if(calcTime1(mid) + calcTime2(mid) < 60000) {
+            if(calcTime1(mid) + calcTime2(mid) < 50000) {
                 ans = mid;
                 left = mid + 1;
             } else {
@@ -93,6 +94,7 @@ public class PoisonedWine {
     int[] rangeLen, rangePoison;
     int rangeN;
     int maxW;
+    int findOneRest;
     public int[] testWine(int numBottles, int testStrips, int testRounds, int numPoison) {
         W = numBottles;
         P = numPoison;
@@ -117,7 +119,7 @@ public class PoisonedWine {
         System.out.println("upper wine: " + maxW);
         // --- cut end ---
         double reg = -1; // 重回帰分析結果(初手のみ)
-        initWidProb();
+//        initWidProb();
         int[] bottle = new int[numBottles];
         for(int i = 0; i < numBottles; i++) {
             bottle[i] = i;
@@ -143,14 +145,21 @@ public class PoisonedWine {
                 System.out.println("estimate calc time: " + (S * S * W * P * P));
                 // --- cut end ---
                 numBottles = findOnePoison(bottle, numBottles, numBottles, testStrips);
+                testStrips = findOneRest;
                 continue;
             }
             final long VAL = (long)numBottles * testStrips * (testRounds - test)
                     * (testRounds - test) * P / 1000;
             curW = numBottles;
             int n;
-            if(VAL < VAL_MAX) {
+            int round = testRounds - test;
+            double bestWidth = Math.min(
+                    2 * numBottles / ((numPoison - 0.46 * Math.log10(round) * (testStrips - 3)) * (round * 1.1 + 1)),
+                    numBottles / testStrips
+            ) * Math.pow(WID_COEF, test);
+            if(bestWidth < 1) {
                     //(VAL < 5000 || P < 10) && numBottles < 4000 && (numBottles < 1000 || P * (testRounds - test) < 33)) {
+                if(widProb == null) initWidProb();
                 // --- cut start ---
                 long time = -1;
                 if(estCache.isEmpty()) time = System.currentTimeMillis();
@@ -169,16 +178,24 @@ public class PoisonedWine {
                 // --- sub end ---
                 // --- cut start ---
                 if(time >= 0) time = System.currentTimeMillis() - time;
-                System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f rd:%f) time:%d\n",
+                System.out.printf("wine:%4d poi:%3d str:%2d n:%d round:%d (prob:%f rd:%f) est:%f time:%d\n",
                         numBottles, numPoison, testStrips, n,
-                        testRounds - test, pb, regProb - pb * 100, time);
+                        testRounds - test, pb, regProb - pb * 100, preEst, time);
                 // --- cut end ---
+                if(rangePoison[0] == 1 && findOneExp(rangeLen[0], testStrips) >= preEst) {
+                    numBottles = findOnePoison(bottle, rangeLen[0], numBottles, testStrips);
+                    testStrips = findOneRest;
+                    rangeLen[0] = numBottles;
+                    rangePoison[0] = numPoison;
+                    rangeN = 1;
+                    continue;
+                }
 
                 // --- sub start ---
                 logger.append(String.format("probdiffD,%d,%f,%f,%f",
                         PoisonedWineVis.seedL, regProb - pb * 100, regProb, pb)).append("\n");
                 // --- sub end ---
-            } else if(maxW > 0) {
+            } else if(false && maxW > 0) {
                 // --- cut start ---
                 System.out.println("cont begin");
                 // --- cut end ---
@@ -234,11 +251,11 @@ public class PoisonedWine {
                 // --- cut start ---
                 System.out.println("regression");
                 // --- cut end ---
-                int round = testRounds - test;
-                double bestWidth = Math.min(
-                        2 * numBottles / ((numPoison - 0.46 * Math.log10(round) * (testStrips - 3)) * (round * 1.1 + 1)),
-                        numBottles / testStrips
-                );
+//                int round = testRounds - test;
+//                double bestWidth = Math.min(
+//                        2 * numBottles / ((numPoison - 0.46 * Math.log10(round) * (testStrips - 3)) * (round * 1.1 + 1)),
+//                        numBottles / testStrips
+//                );
 //                double bestWidth = -1;
                 if(bestWidth < 1) {
                     // 重回帰分析結果(ただし線形結合よりいい立式を考えた方がいい)
@@ -256,7 +273,14 @@ public class PoisonedWine {
                 logger.append(String.format("reg,%d,%f,,", PoisonedWineVis.seedL, regProb)).append("\n");
                 // --- sub end ---
             }
-            if(n < 0) n = (numBottles + testStrips - 1) / testStrips;
+//            n = (int) (n * Math.pow(WID_COEF, test));
+
+            if(!changeRange) {
+                rangeLen[0] = numBottles;
+                rangePoison[0] = numPoison;
+                rangeN = 1;
+            }
+            if(n <= 0) n = (numBottles + testStrips - 1) / testStrips;
             List<String> tests = new ArrayList<>();
             for (int i = 0; i < testStrips; ++i) {
                 if(i * n >= numBottles) break;
@@ -280,18 +304,18 @@ public class PoisonedWine {
                         int j;
                         for (j = 0; j < n && i * n + j < numBottles; ++j)
                             warning.add(bottle[i * n + j]);
-                        if(changeRange) {
+//                        if(changeRange) {
                             rangeLen[0] -= j;
                             rangePoison[0]--;
                             rangeLen[rangeN] = j;
                             rangePoison[rangeN++] = 1;
-                        }
+//                        }
                         used++;
                     } else for (int j = 0; j < n && i * n + j < numBottles; ++j) {
                         // 今回考えられていない範囲
                         bottle[next++] = bottle[i * n + j];
                     }
-                } else if(changeRange) {
+                } else {// if(changeRange) {
                     // 毒がなかった場合
                     final int num = Math.min(n, numBottles - i * n);
                     rangeLen[0] -= num;
@@ -302,11 +326,11 @@ public class PoisonedWine {
             for(int w: warning) bottle[next++] = w;
             testStrips -= used;
             numBottles = next;
-            if(rangePoison[0] == 0 && changeRange) {
+            if(rangePoison[0] == 0) {
                 // 先頭範囲の毒が0になった場合
 
                 for(int i = rangeLen[0]; i < numBottles; i++) {
-                    bottle[i - rangeLen[0]] = bottle[i]; // bugあり TODO
+                    bottle[i - rangeLen[0]] = bottle[i];
                 }
                 numBottles -= rangeLen[0];
                 for(int i = 1; i < rangeN; i++) {
@@ -315,10 +339,11 @@ public class PoisonedWine {
                 }
                 rangeN--;
             }
-            if(!changeRange) {
+            if(rangeN > 1 && rangeLen[0] <= rangeLen[1]) {
                 rangeLen[0] = numBottles;
                 rangePoison[0] = numPoison;
                 rangeN = 1;
+                shuffle(bottle, numBottles);
             }
             // --- cut start ---
             int pcnt = 0;
@@ -697,6 +722,11 @@ public class PoisonedWine {
         // --- cut end ---
     }
 
+    double findOneExp(int wine, int strip) {
+        if((1 << strip) >= wine) return wine - 1;
+        return wine - (double) wine / (1 << strip);
+    }
+
     /**
      * 引数3のfindOnePoisonを実行して，ボトルを整形する
      * @param bottle ワインリスト
@@ -739,6 +769,7 @@ public class PoisonedWine {
             }
         }
         int used = strip;
+        int nextStrip = strip;
         for(int i = 0; i < strip; i++) {
             if(test[i] == null) used--;
         }
@@ -750,7 +781,10 @@ public class PoisonedWine {
         int[] result = PoisonTest.useTestStrips(test);
         int bit = 0;
         for(int i = 0; i < test.length; i++) {
-            if(result[i] == 1) bit |= 1 << i;
+            if(result[i] == 1) {
+                bit |= 1 << i;
+                nextStrip--;
+            }
         }
         List<Integer> bad = new ArrayList<>();
         // 下位stripビットのビットパターンがbitに等しい場合毒の可能性
@@ -758,6 +792,7 @@ public class PoisonedWine {
         for(int i = 1; i <= wine; i++) {
             if((i & mask) == bit) bad.add(bottle[i - 1]);
         }
+        findOneRest = nextStrip;
         return bad;
     }
 
