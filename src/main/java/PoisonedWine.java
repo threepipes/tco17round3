@@ -46,7 +46,7 @@ public class PoisonedWine {
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
-    static int randSeed = 2;
+    static int randSeed = 1;
     Random rand = new Random(randSeed);
     void shuffle(int[] a, int len) {
         for(int i = 0; i < len; i++) {
@@ -105,7 +105,7 @@ public class PoisonedWine {
         rangeLen[0] = W;
         rangePoison[0] = P;
         rangeN = 1;
-        maxW = upperWine();
+//        maxW = upperWine();
         double log2W = Math.log(W) / Math.log(2);
         long time1 = (long) (S * (S + log2W) * W * P * P / 10000);
         long time2 = (long)(13L * S * S * R * W * log2W / 300000);
@@ -339,12 +339,6 @@ public class PoisonedWine {
                 }
                 rangeN--;
             }
-            if(rangeN > 1 && rangeLen[0] <= rangeLen[1]) {
-                rangeLen[0] = numBottles;
-                rangePoison[0] = numPoison;
-                rangeN = 1;
-                shuffle(bottle, numBottles);
-            }
             // --- cut start ---
             int pcnt = 0;
             for(int i = 0; i < numBottles; i++) {
@@ -356,6 +350,12 @@ public class PoisonedWine {
             dump(rangeLen, rangeN);
             dump(rangePoison, rangeN);
             // --- cut end ---
+            if(rangeN > 1 && rangeLen[0] <= rangeLen[1] * 2) {
+                rangeLen[0] = numBottles;
+                rangePoison[0] = numPoison;
+                rangeN = 1;
+                shuffle(bottle, numBottles);
+            }
         }
         int[] ret = new int[numBottles];
         for (int i = 0; i < numBottles; ++i)
