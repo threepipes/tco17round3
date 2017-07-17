@@ -53,8 +53,7 @@ def create(local=False, path=dst_path, message=None):
     filename = timestamp
     if message:
         filename += '_' + message
-    filename += '.' + ext
-    shutil.copy(dst_path, history_path + timestamp + '.' + ext)
+    shutil.copy(dst_path, history_path + filename + '.' + ext)
 
 
 def build_test_jar(message):
