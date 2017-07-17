@@ -205,9 +205,10 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 250;
-        for(int p = 0; p <= 8; p++) {
+        int testN = 100;
+        for(int p = 0; p <= 0; p++) {
             long seed = p * testN + 1;
+//            PoisonedWine.randSeed = p + 10;
             double scoreSum = 0;
             List<TestInfo> testList = new ArrayList<>(testN);
             for (long i = seed; i < testN + seed; i++) {
@@ -218,18 +219,19 @@ public class PoisonedWineVis {
                 t.sampleScore = f.testScore;
                 t.time = f.time;
                 testList.add(t);
+                System.out.println("score: " + f.testScore);
                 System.out.println("current: " + (scoreSum / (i - seed + 1)));
             }
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, String.format("result_dp_cont_%2d.csv", p));
+            writeTestInfo(testList, String.format("result_reg_main_v1000_%02d.csv", p));
         }
     }
     // -----------------------------------------
 
     static void writeTestInfo(List<TestInfo> testList, String filename) {
-        File file = new File(System.getenv("DATA_PATH") + "/0710/" + filename);
+        File file = new File(System.getenv("DATA_PATH") + "/0716/" + filename);
         try(PrintWriter out = new PrintWriter(file)) {
             out.println("id,"+filename);
             for(TestInfo t: testList) {
@@ -240,7 +242,7 @@ public class PoisonedWineVis {
         }
     }
     void addFatalError(String message) {
-        System.out.println(message);
+        System.err.println(message);
     }
     void writeLog() {
         StringBuilder sb = pw.logger;
@@ -287,8 +289,8 @@ class ErrorReader extends Thread{
             int read;
             while ((read = error.read(ch)) > 0)
             {   String s = new String(ch,0,read);
-                System.out.print(s);
-                System.out.flush();
+                System.err.print(s);
+                System.err.flush();
             }
         } catch(Exception e) { }
     }
