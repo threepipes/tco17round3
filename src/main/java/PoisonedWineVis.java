@@ -5,6 +5,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class PoisonedWineVis {
 
@@ -13,7 +14,7 @@ public class PoisonedWineVis {
     private int testStrips;
     private int testRounds;
     private int numPoison;
-    static boolean[] bottles;
+    private boolean[] bottles;
 
     private boolean failure = false;
 
@@ -78,7 +79,7 @@ public class PoisonedWineVis {
 
     TestInfo testCase;
     long time;
-    static long seedL;
+    private long seedL;
     PoisonedWine pw;
     public double runTest(String seed) {
         try {
@@ -223,8 +224,17 @@ public class PoisonedWineVis {
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, String.format("result_dp_cont_%2d.csv", p));
+//            writeTestInfo(testList, String.format("result_dp_cont_%2d.csv", p));
         }
+    }
+
+    static double evaluate() {
+        // PoisonWineのパラメータは外部で設定済みとする
+        final int SEED_MAX = 1000;
+        return IntStream.range(1, SEED_MAX + 1)
+                .parallel()
+                .mapToDouble(seed -> new PoisonedWineVis("" + seed).testScore)
+                .sum() / SEED_MAX;
     }
     // -----------------------------------------
 
