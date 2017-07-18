@@ -42,12 +42,16 @@ public class PoisonedWine {
     // params
     final int upperWineLeft = 500;
     final int VAL_MAX = 1000;
-    final double WID_COEF = 1.05;
-    final double LOG_COEF = 0.46;
-    final double ROUND_COEF = 1.1;
-    final int STRIP_SUB = 3;
-    final double ROUND_SUB = 0.1;
-    static int randSeed = 2;
+    static double LOG_COEF = 0.4 + 0.002 * 4;  // 0.40-0.60:0.002*100
+    static double TEST_SUB = 0.05 * 99;     // 0-5:0.05*100
+    static double ROUND_COEF = 1.0 + 0.01 * 17; // 1.0-2.0:0.01*100
+    static double WID_COEF = 0.95 + 0.002 * 53;  // 0.95-1.15:0.002*100
+    static double TEST_COEF = 0.002 * 47;  // 0.0-0.2:0.002*100
+    static double Y_OFFSET = -0.1 + 0.002 * 30;     // -0.1-0.1:0.002*100
+    static double Y_COEF = 1.8 + 0.004 * 71;       // 1.8-2.2:0.004*100
+    static double X_COEF = 0.9 + 0.002 * 64;       // 0.9-1.1:0.002*100
+    static double ROUND_OFFSET = 1; // * 0.0-5.0:0.05*100
+    static int randSeed = 1;
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
@@ -109,7 +113,7 @@ public class PoisonedWine {
         rangeLen[0] = W;
         rangePoison[0] = P;
         rangeN = 1;
-        maxW = upperWine();
+//        maxW = upperWine();
         double log2W = Math.log(W) / Math.log(2);
         long time1 = (long) (S * (S + log2W) * W * P * P / 10000);
         long time2 = (long)(13L * S * S * R * W * log2W / 300000);
@@ -157,9 +161,9 @@ public class PoisonedWine {
             int n;
             int round = testRounds - test;
             double bestWidth = Math.min(
-                    2 * numBottles /
-                            ((numPoison - LOG_COEF * Math.log10(round) * (testStrips - STRIP_SUB))
-                                    * (round * ROUND_COEF + 1)),
+                    Y_OFFSET + Y_COEF * numBottles /
+                            ((numPoison * X_COEF - LOG_COEF * Math.log10(round) * (testStrips - TEST_SUB))
+                                    * (round * ROUND_COEF + ROUND_OFFSET)),
                     numBottles / testStrips
             );// * Math.pow(WID_COEF, test);
             if(VAL < VAL_MAX && bestWidth < 1) {
@@ -200,7 +204,7 @@ public class PoisonedWine {
                 logger.append(String.format("probdiffD,%d,%f,%f,%f",
                         PoisonedWineVis.seedL, regProb - pb * 100, regProb, pb)).append("\n");
                 // --- sub end ---
-            } else if(maxW > 0 && bestWidth < 1) {
+            } else if(false && maxW > 0 && bestWidth < 1) {
                 // --- cut start ---
                 System.out.println("cont begin");
                 // --- cut end ---
@@ -254,7 +258,7 @@ public class PoisonedWine {
                 /**/
             } else {
                 // --- cut start ---
-                System.out.println("regression");
+//                System.out.println("regression");
                 // --- cut end ---
 //                int round = testRounds - test;
 //                double bestWidth = Math.min(
@@ -278,7 +282,9 @@ public class PoisonedWine {
                 logger.append(String.format("reg,%d,%f,,", PoisonedWineVis.seedL, regProb)).append("\n");
                 // --- sub end ---
             }
-            n = (int) (n * Math.pow(WID_COEF, test - testRounds * ROUND_SUB));
+            int newN = (int) (n * Math.pow(WID_COEF, test - testRounds * TEST_COEF));
+            if(newN * testStrips <= numBottles) n = newN;
+//            if(testStrips == 1 && n > numBottles / 2) n = numBottles / 2;
 
             if(!changeRange) {
                 rangeLen[0] = numBottles;
@@ -348,8 +354,8 @@ public class PoisonedWine {
             if(pcnt != P) {
                 System.err.println("Wrong!!");
             }
-            dump(rangeLen, rangeN);
-            dump(rangePoison, rangeN);
+//            dump(rangeLen, rangeN);
+//            dump(rangePoison, rangeN);
             // --- cut end ---
             if(rangeN > 1 && rangeLen[0] <= rangeLen[1] * 2) {
                 rangeLen[0] = numBottles;
