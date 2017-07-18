@@ -118,6 +118,38 @@ class Sigmoid(Func):
             print('error: invalid input "%s"' % s)
 
 
+class PlusOne(Func):
+    def __init__(self, offset_x=0, offset_y=0, gain=1, coef=1):
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.gain = gain
+        self.coef = coef
+
+    def func(self, x):
+        return self.offset_y + 1 /\
+            ((1 + np.power(np.e, -self.gain * (x + self.offset_x))) * self.coef)
+
+    def modify(self, s: str):
+        """
+        入力と変更の例
+        'x+5': offset_x += 5
+        'x-5': offset_x -= 5
+        'y+2.2': offset_y += 2.2
+        'a-10': gain -= 10
+        """
+        change = float(s[1:])
+        if s[0] == 'x':
+            self.offset_x += change
+        elif s[0] == 'y':
+            self.offset_y += change
+        elif s[0] == 'a':
+            self.gain += change
+        elif s[0] == 'c':
+            self.coef += change
+        else:
+            print('error: invalid input "%s"' % s)
+
+
 def test_sigmoid(sigmoid: Sigmoid):
     sigmoid.modify('a+0.01')
     if sigmoid.gain >= 10:
