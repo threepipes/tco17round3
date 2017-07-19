@@ -4,7 +4,8 @@ import java.util.*;
 public class ParamSearcher {
     public static final String logPath = System.getenv("DATA_PATH") + "statistics/eval_log.csv";
     static public void main(String[] args) throws IOException {
-        new SimulatedAnnealing().sa();
+        List<State> bests = getBests(10);
+        BruteForceCheck.brute(bests);
     }
 
     static List<State> getBests(int n) throws IOException {
@@ -25,10 +26,12 @@ public class ParamSearcher {
 
 class BruteForceCheck {
     static void brute(List<State> candidate) {
-        State allBest = candidate.get(0).copy();
+        State allBest = null;
         for(State state: candidate) {
+            state.evaluate();
             State best = state.copy();
             System.out.println("Start: " + best);
+            state.params[0] += 10;
             for (int i = 0; i < 10; i++) {
                 state.params[0] -= 2;
                 double score = state.evaluate();
@@ -38,7 +41,7 @@ class BruteForceCheck {
                 }
             }
             System.out.println(best);
-            if(allBest.score < best.score) {
+            if(allBest == null || allBest.score < best.score) {
                 allBest = best;
             }
         }
@@ -110,7 +113,7 @@ class State implements Comparable<State> {
     int[] params;
     long id;
     public static final int PARAM_MAX = 101;
-    public static final int PARAM_SIZE = 9;
+    public static final int PARAM_SIZE = 8;
     State(int[] params) {
         this.params = params;
         for(int p: params) {
@@ -153,7 +156,7 @@ class State implements Comparable<State> {
         PoisonedWine.Y_OFFSET = -0.1 + 0.002 * params[5];
         PoisonedWine.Y_COEF = 1.8 + 0.004 * params[6];
         PoisonedWine.X_COEF = 0.9 + 0.002 * params[7];
-        PoisonedWine.VAL_MAX = 40 * params[8];
+//        PoisonedWine.VAL_MAX = 40 * params[8];
 //        history.put(id, this);
         return score = PoisonedWineVis.evaluate();
     }

@@ -39,7 +39,7 @@ class PoisonTest {
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
-    static double LOG_COEF = 0.46;  // 0.40-0.60:0.002*100
+    static double LOG_COEF = 0.4;  // 0.40-0.60:0.002*100
     static double TEST_SUB = 3;     // 0-5:0.05*100
     static double ROUND_COEF = 1.1; // 1.0-2.0:0.01*100
     static double WID_COEF = 1.05;  // 0.95-1.15:0.002*100
@@ -143,7 +143,7 @@ public class PoisonedWine {
                 bestWidth = numBottles / 2;
                 if(bestWidth < 1) bestWidth = 1;
             }
-            if(VAL < VAL_MAX || bestWidth < 1) {
+            if(VAL < VAL_MAX && bestWidth < 1) {
                 if(widProb == null) {
                     initComb();
                     initWidProb();
