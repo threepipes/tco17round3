@@ -232,7 +232,7 @@ public class PoisonedWineVis {
 
     static double evaluate() {
         // PoisonWineのパラメータは外部で設定済みとする
-        final int SEED_MAX = 2000;
+        final int SEED_MAX = 1000;
         return IntStream.range(1, SEED_MAX + 1)
                 .parallel()
                 .mapToDouble(seed -> new PoisonedWineVis("" + seed).testScore)

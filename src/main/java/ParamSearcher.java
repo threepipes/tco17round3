@@ -5,9 +5,10 @@ import java.io.PrintWriter;
 import java.util.*;
 
 public class ParamSearcher {
-    static double TEMPER = 0.1;
+    static double TEMPER = 0.01;
     static public void main(String[] args) throws IOException {
-        State state = new State(new int[]{4, 99, 17, 53, 47, 30, 71, 64});
+        State state = new State(new int[]{3, 65, 35, 99, 92, 34, 74, 79});
+//        State state = new State(new int[]{4, 99, 17, 53, 47, 30, 71, 64});
 //        State state = new State(new int[]{30, 60, 10, 50, 50});
         System.out.println("Start evaluate v1.5.");
         long time = System.currentTimeMillis();
