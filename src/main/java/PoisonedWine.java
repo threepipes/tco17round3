@@ -40,16 +40,18 @@ class PoisonTest {
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
     // params
-    static double LOG_COEF      = 0.4 + 0.002 * 0;  // 0.40-0.60:0.002*100
-    static double TEST_SUB      = 0.0 + 0.05  * 94; // 0-5:0.05*100
-    static double ROUND_COEF    = 1.0 + 0.01  * 24; // 1.0-2.0:0.01*100
-    static double WID_COEF      = 0.95+ 0.002 * 51; // 0.95-1.15:0.002*100
-    static double TEST_COEF     = 0.0 + 0.002 * 79; // 0.0-0.2:0.002*100
-    static double Y_OFFSET      =-0.1 + 0.002 * 73; // -0.1-0.1:0.002*100
-    static double Y_COEF        = 1.8 + 0.004 * 87; // 1.8-2.2:0.004*100
-    static double X_COEF        = 0.9 + 0.002 * 59; // 0.9-1.1:0.002*100
+    static double LOG_COEF      = 0.3 + 0.002 * 50;  // 0.30-0.50:0.002*100
+    static double TEST_SUB      = 0.0 + 0.05  * 66; // 0-5:0.05*100
+    static double ROUND_COEF    = 1.0 + 0.01  *  7; // 1.0-2.0:0.01*100
+    static double WID_COEF      = 0.95+ 0.002 * 59; // 0.95-1.15:0.002*100
+    static double TEST_COEF     = 0.0 + 0.002 * 48; // 0.0-0.2:0.002*100
+    static double STRIP_COEF    = 0.5 + 0.01  *  4; // -0.1-0.1:0.002*100
+    static double Y_COEF        = 1.8 + 0.004 * 57; // 1.8-2.2:0.004*100
+    static double X_COEF        = 0.9 + 0.002 * 71; // 0.9-1.1:0.002*100
+    static double SHUFFLE_COEF  = 0.0 + 0.1   * 24;
     static double ROUND_OFFSET = 1;
-    static int randSeed = 0;
+    final double Y_OFFSET = 0.082;
+    static int randSeed = 10;
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
@@ -66,10 +68,8 @@ public class PoisonedWine {
 
     int W, P, S, R;
     int curW;
-    double est = -1;
     int[] rangeLen, rangePoison;
     int rangeN;
-    int maxW;
     int findOneRest;
     public int[] testWine(int numBottles, int testStrips, int testRounds, int numPoison) {
         W = numBottles;
@@ -98,10 +98,11 @@ public class PoisonedWine {
             int round = testRounds - test;
             double bestWidth = Math.min(
                     Y_OFFSET + Y_COEF * numBottles /
-                            ((numPoison * X_COEF - LOG_COEF * Math.log10(round) * (testStrips - TEST_SUB))
+                            ((numPoison * X_COEF - LOG_COEF * Math.log10(round)
+                                    * (testStrips * STRIP_COEF - TEST_SUB))
                                     * (round * ROUND_COEF + ROUND_OFFSET)),
                     numBottles / Math.min(numBottles, testStrips)
-            );// * Math.pow(WID_COEF, test);
+            );
             if(bestWidth < 1) {
                 bestWidth = numBottles / Math.min(numBottles, testStrips);
             }
@@ -138,18 +139,16 @@ public class PoisonedWine {
                         int j;
                         for (j = 0; j < n && i * n + j < numBottles; ++j)
                             warning.add(bottle[i * n + j]);
-//                        if(changeRange) {
-                            rangeLen[0] -= j;
-                            rangePoison[0]--;
-                            rangeLen[rangeN] = j;
-                            rangePoison[rangeN++] = 1;
-//                        }
+                        rangeLen[0] -= j;
+                        rangePoison[0]--;
+                        rangeLen[rangeN] = j;
+                        rangePoison[rangeN++] = 1;
                         used++;
                     } else for (int j = 0; j < n && i * n + j < numBottles; ++j) {
                         // 今回考えられていない範囲
                         bottle[next++] = bottle[i * n + j];
                     }
-                } else {// if(changeRange) {
+                } else {
                     // 毒がなかった場合
                     final int num = Math.min(n, numBottles - i * n);
                     rangeLen[0] -= num;
@@ -172,7 +171,7 @@ public class PoisonedWine {
                 }
                 rangeN--;
             }
-            if(rangeN > 1 && rangeLen[0] <= rangeLen[1] * 2) {
+            if(rangeN > 1 && rangeLen[0] <= rangeLen[1] * SHUFFLE_COEF) {
                 rangeLen[0] = numBottles;
                 rangePoison[0] = numPoison;
                 rangeN = 1;
