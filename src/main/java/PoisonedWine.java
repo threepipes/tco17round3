@@ -55,7 +55,7 @@ public class PoisonedWine {
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
-    static int randSeed = 0;
+    static int randSeed = 3;
     Random rand = new Random(randSeed);
     void shuffle(int[] a, int len) {
         for(int i = 0; i < len; i++) {

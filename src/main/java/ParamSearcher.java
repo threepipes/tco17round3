@@ -2,9 +2,40 @@ import java.io.*;
 import java.util.*;
 
 public class ParamSearcher {
+    public static final int SEED_MAX = 5000;
     public static final String logPath = System.getenv("DATA_PATH") + "statistics/eval_log.csv";
     static public void main(String[] args) throws IOException {
-        new SimulatedAnnealing().sa();
+        int[][] cand = {
+                {50, 66, 7, 59, 48, 4, 57, 71, 24},
+//                {64, 64, 34, 69, 12, 5, 62, 65, 25},
+//                {89, 85, 25, 78, 23, 7, 49, 68, 22},
+        };
+        for(int[] arr: cand) {
+            for(int seed = 10; seed <= 20; seed++) {
+                PoisonedWine.randSeed = seed;
+                State s = new State(arr);
+                double score = s.evaluate();
+                System.out.println(score);
+            }
+        }
+    }
+
+    static void decideBest(List<State> bests) {
+        TreeMap<Double, State> scores = new TreeMap<>();
+        for(State s: bests) {
+            double score = s.median(5, 10);
+            scores.put(score, s);
+        }
+        System.out.println("finish");
+        System.out.println("average tops");
+        Collections.sort(bests);
+        for(State s: bests) {
+            System.out.println(s);
+        }
+        System.out.println("\nmedian tops");
+        for(Map.Entry<Double, State> e: scores.entrySet()) {
+            System.out.println(e.getKey() + ": " + e.getValue());
+        }
     }
 
     static List<State> getBests(int n) throws IOException {
@@ -147,8 +178,23 @@ class State implements Comparable<State> {
         return new State(next);
     }
 
+    double median(int n, int startSeed) {
+        double[] buff = new double[n];
+        double sum = 0;
+        for(int i = 0; i < n; i++) {
+            final int seed = i + startSeed;
+            PoisonedWine.randSeed = seed;
+            double value = evaluate();
+            buff[i] = value;
+            sum += value;
+        }
+        Arrays.sort(buff);
+        this.score = sum / n;
+        return buff[n / 2];
+    }
+
     double evaluate() {
-        if(history.containsKey(id)) return history.get(id).score;
+//        if(history.containsKey(id)) return history.get(id).score;
         PoisonedWine.LOG_COEF = 0.3 + 0.002 * params[0];
         PoisonedWine.TEST_SUB = 0.0 + 0.05 * params[1];
         PoisonedWine.ROUND_COEF = 1.0 + 0.01 * params[2];
@@ -165,7 +211,7 @@ class State implements Comparable<State> {
 //        PoisonedWine.STRP_COEF_ADD = PoisonedWine.STRP_COEF * (params[12] - 50) / 20;
 
 //        PoisonedWine.VAL_MAX = 40 * params[8];
-        history.put(id, this);
+//        history.put(id, this);
         return score = PoisonedWineVis.evaluate();
     }
 
