@@ -206,8 +206,9 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 250;
-        for(int p = 0; p <= 8; p++) {
+        int testN = 5000;
+        long timesec = System.currentTimeMillis();
+        for(int p = 0; p <= 0; p++) {
             long seed = p * testN + 1;
             double scoreSum = 0;
             List<TestInfo> testList = new ArrayList<>(testN);
@@ -226,11 +227,12 @@ public class PoisonedWineVis {
             System.out.println("score: " + (scoreSum * 1000000L / testN));
 //            writeTestInfo(testList, String.format("result_dp_cont_%2d.csv", p));
         }
+        System.out.println(System.currentTimeMillis() - timesec);
     }
 
     static double evaluate() {
         // PoisonWineのパラメータは外部で設定済みとする
-        final int SEED_MAX = 1000;
+        final int SEED_MAX = 2000;
         return IntStream.range(1, SEED_MAX + 1)
                 .parallel()
                 .mapToDouble(seed -> new PoisonedWineVis("" + seed).testScore)

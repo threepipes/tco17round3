@@ -5,20 +5,19 @@ import java.io.PrintWriter;
 import java.util.*;
 
 public class ParamSearcher {
-    static double TEMPER = 0.99;
+    static double TEMPER = 0.1;
     static public void main(String[] args) throws IOException {
-        State state = new State(new int[]{70, 62, 56, 69, 15, 50, 50, 50});
+        State state = new State(new int[]{4, 99, 17, 53, 47, 30, 71, 64});
 //        State state = new State(new int[]{30, 60, 10, 50, 50});
-        System.out.println("Start evaluate v1.4.");
+        System.out.println("Start evaluate v1.5.");
         long time = System.currentTimeMillis();
         double score = state.evaluate();
         time = System.currentTimeMillis() - time;
         System.out.println("Initial score: " + score);
         State best = state;
         double bestScore = score;
-        final long HOUR_17 = 17 * 3600 * 1000;
-        final int MAX_ITER = (int)(HOUR_17 / time);
-        TEMPER = Math.pow(0.05, 1.0 / MAX_ITER);
+        final long HOUR_10 = 10 * 3600 * 1000;
+        final int MAX_ITER = (int)(HOUR_10 / time);
         System.out.println("Iter Num: " + MAX_ITER);
         Random rand = new Random(0);
         PrintWriter pw = new PrintWriter(
@@ -54,7 +53,7 @@ public class ParamSearcher {
     }
 
     static double temper(double r) {
-        return Math.pow(0.99, r);
+        return Math.pow(TEMPER, r);
     }
 
     static double prob(double curScore, double nextScore, double temper) {

@@ -166,8 +166,18 @@ public class PoisonedWine {
                                     * (round * ROUND_COEF + ROUND_OFFSET)),
                     numBottles / testStrips
             );// * Math.pow(WID_COEF, test);
+            // TODO 提出版では削除
+            if(bestWidth < 1) bestWidth = numBottles / Math.min(numBottles, testStrips);
+            if(numBottles == 1 && bestWidth > numBottles / 2) {
+                bestWidth = numBottles / 2;
+                if(bestWidth < 1) bestWidth = 1;
+            }
             if(VAL < VAL_MAX && bestWidth < 1) {
-                if(widProb == null) initWidProb();
+                if(widProb == null) {
+//                    init();
+                    initComb();
+                    initWidProb();
+                }
                     //(VAL < 5000 || P < 10) && numBottles < 4000 && (numBottles < 1000 || P * (testRounds - test) < 33)) {
                 // --- cut start ---
 //                long time = -1;
@@ -815,7 +825,7 @@ public class PoisonedWine {
     }
 
     void init() {
-        initComb();
+//        initComb();
         initPerm();
 //        initWidProb(); // Poisonがないと初期化不可
     }
@@ -850,7 +860,7 @@ public class PoisonedWine {
         // --- cut start ---
         PoisonTest.vis = null;
         // --- cut end ---
-        init();
+//        init();
     }
     // ---8<------- end of solution submitted to the website -------8<-------
     // --- cut start ---
