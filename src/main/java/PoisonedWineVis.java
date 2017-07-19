@@ -206,7 +206,7 @@ public class PoisonedWineVis {
 //            if (args[i].equals("-exec"))
 //                exec = args[++i];
 //        }
-        int testN = 5000;
+        int testN = 500;
         long timesec = System.currentTimeMillis();
         for(int p = 0; p <= 0; p++) {
             long seed = p * testN + 1;

@@ -39,21 +39,22 @@ class PoisonTest {
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
-    static double LOG_COEF = 0.4;  // 0.40-0.60:0.002*100
-    static double TEST_SUB = 3;     // 0-5:0.05*100
-    static double ROUND_COEF = 1.1; // 1.0-2.0:0.01*100
-    static double WID_COEF = 1.05;  // 0.95-1.15:0.002*100
-    static double TEST_COEF = 0.1;  // 0.0-0.2:0.002*100
-    static double Y_OFFSET = 0;     // -0.1-0.1:0.002*100
-    static double Y_COEF = 2;       // 1.8-2.2:0.004*100
-    static double X_COEF = 1;       // 0.9-1.1:0.002*100
+    static double LOG_COEF      = 0.4 + 0.002 * 0;  // 0.40-0.60:0.002*100
+    static double TEST_SUB      = 0.0 + 0.05  * 94; // 0-5:0.05*100
+    static double ROUND_COEF    = 1.0 + 0.01  * 24; // 1.0-2.0:0.01*100
+    static double WID_COEF      = 0.95+ 0.002 * 51; // 0.95-1.15:0.002*100
+    static double TEST_COEF     = 0.0 + 0.002 * 79; // 0.0-0.2:0.002*100
+    static double Y_OFFSET      =-0.1 + 0.002 * 73; // -0.1-0.1:0.002*100
+    static double Y_COEF        = 1.8 + 0.004 * 87; // 1.8-2.2:0.004*100
+    static double X_COEF        = 0.9 + 0.002 * 59; // 0.9-1.1:0.002*100
+    static double SHUFFLE_COEF  = 2;
     final int upperWineLeft = 500;  // param:300,5000,1000
     static int VAL_MAX = 1000;      // 0-4000:40*100
     static double ROUND_OFFSET = 1; // * 0.0-5.0:0.05*100
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
-    static int randSeed = 2;
+    static int randSeed = 0;
     Random rand = new Random(randSeed);
     void shuffle(int[] a, int len) {
         for(int i = 0; i < len; i++) {
@@ -88,12 +89,17 @@ public class PoisonedWine {
         }
         return ans;
     }
+    static double BASE_ADD = 0;
+    static double WINE_COEF_ADD = 0;
+    static double POIS_COEF_ADD = 0;
+    static double ROUD_COEF_ADD = 0;
+    static double STRP_COEF_ADD = 0;
 
-    final double BASE = 37.54114071;
-    final double WINE_COEF = -0.000656549;
-    final double POIS_COEF = -0.005272914;
-    final double ROUD_COEF = 7.676318797;
-    final double STRP_COEF = -0.306667327;
+    static final double BASE = 37.54114071 + BASE_ADD;
+    static final double WINE_COEF = -0.000656549 + WINE_COEF_ADD;
+    static final double POIS_COEF = -0.005272914 + POIS_COEF_ADD;
+    static final double ROUD_COEF = 7.676318797 + ROUD_COEF_ADD;
+    static final double STRP_COEF = -0.306667327 + STRP_COEF_ADD;
 
     int W, P, S, R;
     int curW;
@@ -135,15 +141,17 @@ public class PoisonedWine {
                     Y_OFFSET + Y_COEF * numBottles /
                             ((numPoison * X_COEF - LOG_COEF * Math.log10(round) * (testStrips - TEST_SUB))
                                     * (round * ROUND_COEF + ROUND_OFFSET)),
-                    numBottles / testStrips
+                    numBottles / Math.min(numBottles, testStrips)
             );// * Math.pow(WID_COEF, test);
             // TODO 提出版では削除
-            if(bestWidth < 1) bestWidth = numBottles / Math.min(numBottles, testStrips);
+            if(bestWidth < 1) {
+                bestWidth = numBottles / Math.min(numBottles, testStrips);
+            }
             if(numBottles == 1 && bestWidth > numBottles / 2) {
                 bestWidth = numBottles / 2;
                 if(bestWidth < 1) bestWidth = 1;
             }
-            if(VAL < VAL_MAX && bestWidth < 1) {
+            if(false && VAL < VAL_MAX && bestWidth < 1) {
                 if(widProb == null) {
                     initComb();
                     initWidProb();
@@ -233,7 +241,7 @@ public class PoisonedWine {
                 }
                 rangeN--;
             }
-            if(rangeN > 1 && rangeLen[0] <= rangeLen[1] * 2) {
+            if(rangeN > 1 && rangeLen[0] <= rangeLen[1] * SHUFFLE_COEF) {
                 rangeLen[0] = numBottles;
                 rangePoison[0] = numPoison;
                 rangeN = 1;

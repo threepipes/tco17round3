@@ -4,8 +4,7 @@ import java.util.*;
 public class ParamSearcher {
     public static final String logPath = System.getenv("DATA_PATH") + "statistics/eval_log.csv";
     static public void main(String[] args) throws IOException {
-        List<State> bests = getBests(10);
-        BruteForceCheck.brute(bests);
+        new SimulatedAnnealing().sa();
     }
 
     static List<State> getBests(int n) throws IOException {
@@ -25,15 +24,14 @@ public class ParamSearcher {
 }
 
 class BruteForceCheck {
-    static void brute(List<State> candidate) {
+    static void brute(List<State> candidate, int checkParam) {
         State allBest = null;
         for(State state: candidate) {
             state.evaluate();
             State best = state.copy();
             System.out.println("Start: " + best);
-            state.params[0] += 10;
-            for (int i = 0; i < 10; i++) {
-                state.params[0] -= 2;
+            for (int i = 0; i <= 100; i++) {
+                state.params[checkParam] = i;
                 double score = state.evaluate();
                 System.out.println(state);
                 if (score > best.score) {
@@ -50,12 +48,15 @@ class BruteForceCheck {
 }
 
 class SimulatedAnnealing {
-    State initialState = new State(new int[]{3, 65, 35, 99, 92, 34, 74, 79, 25});
+    State initialState = new State(new int[]{
+            3, 65, 35, 99, 92,
+            34, 74, 79, 20,
+    });
     final double TEMPER = 0.01;
 
     void sa() throws IOException {
         State state = initialState;
-        System.out.println("Start evaluate v1.6.");
+        System.out.println("Start evaluate v1.8.");
         long time = System.currentTimeMillis();
         double score = state.evaluate();
         time = System.currentTimeMillis() - time;
@@ -70,7 +71,7 @@ class SimulatedAnnealing {
                 new BufferedWriter(new FileWriter(ParamSearcher.logPath)));
         pw.println(state.csv());
         for(int i = 0; i < MAX_ITER; i++) {
-            int degree = (MAX_ITER - i) * (State.PARAM_MAX / 2) / MAX_ITER + 10;
+            int degree = (MAX_ITER - i) * (State.PARAM_MAX / 3) / MAX_ITER + 10;
             State next = state.generateNext(degree);
             double nextScore = next.evaluate();
             pw.println(next.csv());
@@ -113,7 +114,7 @@ class State implements Comparable<State> {
     int[] params;
     long id;
     public static final int PARAM_MAX = 101;
-    public static final int PARAM_SIZE = 8;
+    public static final int PARAM_SIZE = 9;
     State(int[] params) {
         this.params = params;
         for(int p: params) {
@@ -147,7 +148,7 @@ class State implements Comparable<State> {
     }
 
     double evaluate() {
-//        if(history.containsKey(id)) return history.get(id).score;
+        if(history.containsKey(id)) return history.get(id).score;
         PoisonedWine.LOG_COEF = 0.4 + 0.002 * params[0];
         PoisonedWine.TEST_SUB = 0.0 + 0.05 * params[1];
         PoisonedWine.ROUND_COEF = 1.0 + 0.01 * params[2];
@@ -156,8 +157,15 @@ class State implements Comparable<State> {
         PoisonedWine.Y_OFFSET = -0.1 + 0.002 * params[5];
         PoisonedWine.Y_COEF = 1.8 + 0.004 * params[6];
         PoisonedWine.X_COEF = 0.9 + 0.002 * params[7];
+        PoisonedWine.SHUFFLE_COEF = 0.0 + 0.1 * params[8];
+//        PoisonedWine.BASE_ADD = PoisonedWine.BASE * (params[8] - 50) / 20;
+//        PoisonedWine.WINE_COEF_ADD = PoisonedWine.WINE_COEF * (params[9] - 50) / 20;
+//        PoisonedWine.POIS_COEF_ADD = PoisonedWine.POIS_COEF * (params[10] - 50) / 20;
+//        PoisonedWine.ROUD_COEF_ADD = PoisonedWine.ROUD_COEF * (params[11] - 50) / 20;
+//        PoisonedWine.STRP_COEF_ADD = PoisonedWine.STRP_COEF * (params[12] - 50) / 20;
+
 //        PoisonedWine.VAL_MAX = 40 * params[8];
-//        history.put(id, this);
+        history.put(id, this);
         return score = PoisonedWineVis.evaluate();
     }
 
