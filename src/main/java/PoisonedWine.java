@@ -42,16 +42,16 @@ public class PoisonedWine {
     // params
     final int upperWineLeft = 500;
     final int VAL_MAX = 1000;
-    static double LOG_COEF = 0.4 + 0.002 * 4;  // 0.40-0.60:0.002*100
-    static double TEST_SUB = 0.05 * 99;     // 0-5:0.05*100
-    static double ROUND_COEF = 1.0 + 0.01 * 17; // 1.0-2.0:0.01*100
-    static double WID_COEF = 0.95 + 0.002 * 53;  // 0.95-1.15:0.002*100
-    static double TEST_COEF = 0.002 * 47;  // 0.0-0.2:0.002*100
-    static double Y_OFFSET = -0.1 + 0.002 * 30;     // -0.1-0.1:0.002*100
-    static double Y_COEF = 1.8 + 0.004 * 71;       // 1.8-2.2:0.004*100
-    static double X_COEF = 0.9 + 0.002 * 64;       // 0.9-1.1:0.002*100
+    static double LOG_COEF = 0.4 + 0.002 * 96;  // 0.40-0.60:0.002*100
+    static double TEST_SUB = 0.05 * 89;     // 0-5:0.05*100
+    static double ROUND_COEF = 1.0 + 0.01 * 61; // 1.0-2.0:0.01*100
+    static double WID_COEF = 0.95 + 0.002 * 80;  // 0.95-1.15:0.002*100
+    static double TEST_COEF = 0.002 * 4;  // 0.0-0.2:0.002*100
+    static double Y_OFFSET = -0.1 + 0.002 * 27;     // -0.1-0.1:0.002*100
+    static double Y_COEF = 1.8 + 0.004 * 77;       // 1.8-2.2:0.004*100
+    static double X_COEF = 0.9 + 0.002 * 78;       // 0.9-1.1:0.002*100
     static double ROUND_OFFSET = 1; // * 0.0-5.0:0.05*100
-    static int randSeed = 1;
+    static int randSeed = 0;
     // --- sub start ---
     public StringBuilder logger = new StringBuilder();
     // --- sub end ---
@@ -168,7 +168,10 @@ public class PoisonedWine {
             );// * Math.pow(WID_COEF, test);
             if(VAL < VAL_MAX && bestWidth < 1) {
                     //(VAL < 5000 || P < 10) && numBottles < 4000 && (numBottles < 1000 || P * (testRounds - test) < 33)) {
-                if(widProb == null) initWidProb();
+                if(widProb == null) {
+                    initComb();
+                    initWidProb();
+                }
                 // --- cut start ---
                 long time = -1;
                 if(estCache.isEmpty()) time = System.currentTimeMillis();
@@ -833,7 +836,7 @@ public class PoisonedWine {
     }
 
     void init() {
-        initComb();
+//        initComb();
         initPerm();
 //        initWidProb(); // Poisonがないと初期化不可
     }

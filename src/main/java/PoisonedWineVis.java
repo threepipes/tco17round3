@@ -225,7 +225,7 @@ public class PoisonedWineVis {
             System.out.println("sum: " + scoreSum);
             System.out.println("avg: " + (scoreSum / testN));
             System.out.println("score: " + (scoreSum * 1000000L / testN));
-            writeTestInfo(testList, String.format("result_reg_main_arrange_s1_%02d.csv", p));
+            writeTestInfo(testList, String.format("result_reg_main_arrange2_s0_%02d.csv", p));
         }
     }
     // -----------------------------------------
