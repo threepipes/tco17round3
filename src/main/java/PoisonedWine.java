@@ -39,15 +39,16 @@ class PoisonTest {
 
 // -------8<------- start of solution submitted to the website -----8<-------
 public class PoisonedWine {
-    static double LOG_COEF      = 0.4 + 0.002 * 0;  // 0.40-0.60:0.002*100
+    static double LOG_COEF      = 0.3 + 0.002 * 50;  // 0.30-0.50:0.002*100
     static double TEST_SUB      = 0.0 + 0.05  * 94; // 0-5:0.05*100
     static double ROUND_COEF    = 1.0 + 0.01  * 24; // 1.0-2.0:0.01*100
     static double WID_COEF      = 0.95+ 0.002 * 51; // 0.95-1.15:0.002*100
     static double TEST_COEF     = 0.0 + 0.002 * 79; // 0.0-0.2:0.002*100
-    static double Y_OFFSET      =-0.1 + 0.002 * 73; // -0.1-0.1:0.002*100
+    static double STRIP_COEF    = 0.5 + 0.01  * 50; // -0.1-0.1:0.002*100
     static double Y_COEF        = 1.8 + 0.004 * 87; // 1.8-2.2:0.004*100
     static double X_COEF        = 0.9 + 0.002 * 59; // 0.9-1.1:0.002*100
     static double SHUFFLE_COEF  = 2;
+    final double Y_OFFSET = 0.082;
     final int upperWineLeft = 500;  // param:300,5000,1000
     static int VAL_MAX = 1000;      // 0-4000:40*100
     static double ROUND_OFFSET = 1; // * 0.0-5.0:0.05*100
@@ -139,7 +140,8 @@ public class PoisonedWine {
             int round = testRounds - test;
             double bestWidth = Math.min(
                     Y_OFFSET + Y_COEF * numBottles /
-                            ((numPoison * X_COEF - LOG_COEF * Math.log10(round) * (testStrips - TEST_SUB))
+                            ((numPoison * X_COEF - LOG_COEF * Math.log10(round)
+                                    * (testStrips * STRIP_COEF - TEST_SUB))
                                     * (round * ROUND_COEF + ROUND_OFFSET)),
                     numBottles / Math.min(numBottles, testStrips)
             );// * Math.pow(WID_COEF, test);

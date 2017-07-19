@@ -49,14 +49,14 @@ class BruteForceCheck {
 
 class SimulatedAnnealing {
     State initialState = new State(new int[]{
-            3, 65, 35, 99, 92,
-            34, 74, 79, 20,
+            50, 68, 27, 86, 64,
+            50, 28, 65, 24,
     });
     final double TEMPER = 0.01;
 
     void sa() throws IOException {
         State state = initialState;
-        System.out.println("Start evaluate v1.8.");
+        System.out.println("Start evaluate v2.1.");
         long time = System.currentTimeMillis();
         double score = state.evaluate();
         time = System.currentTimeMillis() - time;
@@ -149,12 +149,12 @@ class State implements Comparable<State> {
 
     double evaluate() {
         if(history.containsKey(id)) return history.get(id).score;
-        PoisonedWine.LOG_COEF = 0.4 + 0.002 * params[0];
+        PoisonedWine.LOG_COEF = 0.3 + 0.002 * params[0];
         PoisonedWine.TEST_SUB = 0.0 + 0.05 * params[1];
         PoisonedWine.ROUND_COEF = 1.0 + 0.01 * params[2];
         PoisonedWine.WID_COEF = 0.95 + 0.002 * params[3];
         PoisonedWine.TEST_COEF = 0.0 + 0.002 * params[4];
-        PoisonedWine.Y_OFFSET = -0.1 + 0.002 * params[5];
+        PoisonedWine.STRIP_COEF = 0.5 + 0.01 * params[5];
         PoisonedWine.Y_COEF = 1.8 + 0.004 * params[6];
         PoisonedWine.X_COEF = 0.9 + 0.002 * params[7];
         PoisonedWine.SHUFFLE_COEF = 0.0 + 0.1 * params[8];
